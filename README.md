@@ -1,11 +1,11 @@
-Chat
+Chat Client for Interaction Design
 ===
 
-This application is made with Node.js, Express, Socket.io and Jade.
-It use Bootstrap from Twitter and the javascript librairie SlimScroll.
-To use it, you need Node.js and those 3 modules.
+This application uses Node.js and the Node modules Express, Socket.io and Jade.
+It use Bootstrap from Twitter and the javascript SlimScroll.
+To use it, you need Node.js.
 
-## Install the three modules :
+## Install three modules with Node:
 	- Go to the chat directory and use this command
 	- npm install express@4.12.0
 	- npm install socket.io@1.3.4
@@ -18,7 +18,7 @@ To use it, you need Node.js and those 3 modules.
 ## How to use :
 
 	- node server.js
-	- Go to IP:port from any (recent) navigator to start chatting !
+	- Go to IP:port from any (recent) navigator to start chatting.
 
 ### Credits
 
