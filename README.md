@@ -1,13 +1,11 @@
-Node.js Chat
+Chat
 ===
 
 This application is made with Node.js, Express, Socket.io and Jade.
 It use Bootstrap from Twitter and the javascript librairie SlimScroll.
-Thanks to Node.js, the chat can handle a lot of simultaneous connections without lag.
 To use it, you need Node.js and those 3 modules.
 
 ## Install the three modules :
-
 	- Go to the chat directory and use this command
 	- npm install express@4.12.0
 	- npm install socket.io@1.3.4
@@ -24,4 +22,4 @@ To use it, you need Node.js and those 3 modules.
 
 ### Credits
 
-Creator : [Geekuillaume] (http://geekuillau.me/)
+Based on node.js chat by : [Geekuillaume] (http://geekuillau.me/)
