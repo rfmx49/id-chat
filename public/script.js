@@ -108,5 +108,4 @@ function time() {
 }
 function setHeight() {
 	$(".slimScrollDiv").height('603');
-	$(".slimScrollDiv").css('overflow', 'visible')
 }
