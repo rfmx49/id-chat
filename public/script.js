@@ -85,5 +85,5 @@ function time() {
 	});
 }
 function setHeight() {
-	$(".slimScrollDiv").height('603');
+	//$(".slimScrollDiv").height('603');
 }
