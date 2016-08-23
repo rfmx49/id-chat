@@ -10,14 +10,25 @@ var http = require('http')
   , io = require('socket.io').listen(server);
 
 
-var jade = require('jade');
+var pug = require('pug');
 // var io = require('socket.io').listen(app);
-var pseudoArray = ['admin']; //block the admin username (you can disable it)
+//var pseudoArray = ['admin']; //block the admin username (you can disable it)
+var usersArray = ['admin'];
+
+function userObj(data) {
+	this.username = data.username;
+	this.userid = data.userid;
+	this.sex = data.sex;
+	this.age = data.age;
+	this.address = data.address;
+	this.uuid = data.uuid;
+	this.created = new Date().toISOString();
+}
 
 // Views Options
 
 app.set('views', __dirname + '/views');
-app.set('view engine', 'jade');
+app.set('view engine', 'pug');
 app.set("view options", { layout: false });
 
 app.use(express.static(__dirname + '/public'));
@@ -25,7 +36,7 @@ app.use(express.static(__dirname + '/public'));
 // Render and send the main page
 
 app.get('/', function(req, res){
-  res.render('home.jade');
+  res.render('home.pug');
 });
 server.listen(appPort);
 // app.listen(appPort);
@@ -39,6 +50,8 @@ io.sockets.on('connection', function (socket) { // First connection
 	users += 1; // Add 1 to the count
 	reloadUsers(); // Send the count to all the users
 	socket.on('message', function (data) { // Broadcast the message to all
+		console.log(socket.id);
+		console.log(socket.rooms);
 		if(pseudoSet(socket))
 		{
 			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data};
@@ -46,13 +59,32 @@ io.sockets.on('connection', function (socket) { // First connection
 			console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
 		}
 	});
-	socket.on('setPseudo', function (data) { // Assign a name to the user
-		if (pseudoArray.indexOf(data) == -1) // Test if the name is already taken
+	socket.on('privateMessage', function (data) { // Broadcast the message to one
+		recpiant = getUserAccount(data.recpiant);
+		console.log(usersArray[recpiant]);
+		console.log(socket.id);
+		console.log(socket.rooms);
+		if(pseudoSet(socket))
 		{
-			pseudoArray.push(data);
-			socket.nickname = data;
+			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : "PRIVATE: " + data};
+			//io.sockets.socket(usernames[usr]).emit('msg_user_handle', username, msg);
+			//socket.broadcast.emit('message', transmit);
+			socket.broadcast.to(usersArray[recpiant].userid).emit('message', transmit);
+			console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
+		}
+	});
+	socket.on('setPseudo', function (data) { // Assign a name to the user
+		//if (pseudoArray.indexOf(data.username) == -1) // Test if the name is already taken
+		if (usersArray.findIndex(x=> x.username == data.username) == -1) 
+		{
+			//pseudoArray.push(data.username);
+			console.log(data.uuid);
+			socket.nickname = data.username;
+			usersArray.push(new userObj({username: data.username, userid: socket.id, sex:data.sex, age:data.age, address: socket.handshake.address, uuid: data.uuid}));
+			console.log(JSON.stringify(usersArray));
+			console.log(socket.sessionId);
 			socket.emit('pseudoStatus', 'ok');
-			console.log("user " + data + " connected");
+			console.log("user " + data.username + " connected");
 		}
 		else
 		{
@@ -67,8 +99,8 @@ io.sockets.on('connection', function (socket) { // First connection
 			console.log("disconnect...");
 			var pseudo;
 			pseudo = socket.nickname;
-			var index = pseudoArray.indexOf(pseudo);
-			pseudo.slice(index - 1, 1);
+			//var index = pseudoArray.indexOf(pseudo);
+			//pseudoArray.slice(index - 1, 1);
 		}
 	});
 });
@@ -81,4 +113,16 @@ function pseudoSet(socket) { // Test if the user has a name
 	if (socket.nickname == null ) test = false;
 	else test = true;
 	return test;
+}
+
+function getUserAccount(username) {
+	//object1.find(x=> x.name === 'Jason').uuid
+	//usersArray.find(x=> x.username ==='Jason').uuid
+	var result = usersArray.findIndex(x=> x.username == username)
+	if (result === -1) {
+		return false;
+	}
+	else {
+		return result;
+	}
 }

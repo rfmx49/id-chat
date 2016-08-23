@@ -6,7 +6,6 @@ $(function() {
 	messageContainer = $('#messageInput');
 	submitButton = $("#submit");
 	bindButton();
-	checkUUID();
 	window.setInterval(time, 1000*10);
 	$("#alertPseudo").hide();
 	$('#modalPseudo').modal('show');
@@ -25,9 +24,6 @@ socket.on('connect', function() {
 });
 socket.on('nbUsers', function(msg) {
 	$("#nbUsers").html(msg.nb);
-});
-socket.on('pseudoStatus', function(msg) {
-	console.log("User Status " + msg);
 });
 socket.on('message', function(data) {
 	addMessage(data['message'], data['pseudo'], new Date().toISOString(), false);
@@ -69,8 +65,7 @@ function bindButton() {
 function setPseudo() {
 	if ($("#pseudoInput").val() != "")
 	{
-		var userData = {username: $("#pseudoInput").val(),age: $("#pseudoAgeInput").val(),sex: $("#pseudoSexInput").val(), uuid: sessionStorage['UUID']}
-		socket.emit('setPseudo', userData);
+		socket.emit('setPseudo', $("#pseudoInput").val());
 		socket.on('pseudoStatus', function(data){
 			if(data == "ok")
 			{
@@ -85,29 +80,6 @@ function setPseudo() {
 		})
 	}
 }
-//check to see if uuid is already created
-function checkUUID() {
-	if (typeof sessionStorage['UUID'] === 'undefined') {
-		//no uuid in session storage generate one
-		sessionStorage['UUID'] = uuid();
-	}
-}
-
-//genereate a uuid
-function uuid() {
-    function randomDigit() {
-        if (crypto && crypto.getRandomValues) {
-            var rands = new Uint8Array(1);
-            crypto.getRandomValues(rands);
-            return (rands[0] % 16).toString(16);
-        } else {
-            return ((Math.random() * 16) | 0).toString(16);
-        }
-    }
-    var crypto = window.crypto || window.msCrypto;
-    return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, randomDigit);
-}
-
 function time() {
 	$("time").each(function(){
 		$(this).text($.timeago($(this).attr('title')));
