@@ -38,6 +38,7 @@ app.use(express.static(__dirname + '/public'));
 app.get('/', function(req, res){
   res.render('home.pug');
 });
+
 server.listen(appPort);
 // app.listen(appPort);
 console.log("Server listening on port " + appPort);
@@ -50,8 +51,6 @@ io.sockets.on('connection', function (socket) { // First connection
 	users += 1; // Add 1 to the count
 	reloadUsers(); // Send the count to all the users
 	socket.on('message', function (data) { // Broadcast the message to all
-		console.log(socket.id);
-		console.log(socket.rooms);
 		if(pseudoSet(socket))
 		{
 			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data};
@@ -60,17 +59,20 @@ io.sockets.on('connection', function (socket) { // First connection
 		}
 	});
 	socket.on('privateMessage', function (data) { // Broadcast the message to one
-		recpiant = getUserAccount(data.recpiant);
-		console.log(usersArray[recpiant]);
-		console.log(socket.id);
-		console.log(socket.rooms);
-		if(pseudoSet(socket))
-		{
-			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : "PRIVATE: " + data};
-			//io.sockets.socket(usernames[usr]).emit('msg_user_handle', username, msg);
-			//socket.broadcast.emit('message', transmit);
-			socket.broadcast.to(usersArray[recpiant].userid).emit('message', transmit);
-			console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
+		var recpiant = getUserAccountByName(data.recpiant);
+		if (recpiant == false) {
+			socket.emit('pmStatus', 'nouser');
+		}
+		else {
+			console.log(usersArray[recpiant]);
+			if(pseudoSet(socket))
+			{
+				var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : "PRIVATE: " + data};
+				//io.sockets.socket(usernames[usr]).emit('msg_user_handle', username, msg);
+				//socket.broadcast.emit('message', transmit);
+				socket.broadcast.to(usersArray[recpiant].userid).emit('message', transmit);
+				console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
+			}
 		}
 	});
 	socket.on('setPseudo', function (data) { // Assign a name to the user
@@ -103,6 +105,20 @@ io.sockets.on('connection', function (socket) { // First connection
 			//pseudoArray.slice(index - 1, 1);
 		}
 	});
+	socket.on('uuidLogin', function (uuid) { // Attempt to login with uuid
+		var oldUser = getUserAccountByUUID(uuid);
+		console.log("user search returned " + oldUser);
+		if (oldUser === false) {
+			console.log("Login Failed for " + uuid);
+			socket.emit('loginStatus', 'failed');
+		}
+		else {
+			console.log(usersArray[oldUser]);
+			usersArray[oldUser].userid = socket.id;
+			socket.nickname = usersArray[oldUser].username;
+			socket.emit('loginStatus', usersArray[oldUser]);
+		}		
+	});
 });
 
 function reloadUsers() { // Send the count of the users to all
@@ -115,10 +131,23 @@ function pseudoSet(socket) { // Test if the user has a name
 	return test;
 }
 
-function getUserAccount(username) {
+function getUserAccountByName(username) {
 	//object1.find(x=> x.name === 'Jason').uuid
 	//usersArray.find(x=> x.username ==='Jason').uuid
 	var result = usersArray.findIndex(x=> x.username == username)
+	if (result === -1) {
+		return false;
+	}
+	else {
+		return result;
+	}
+}
+
+function getUserAccountByUUID(uuid) {
+	//object1.find(x=> x.name === 'Jason').uuid
+	//usersArray.find(x=> x.username ==='Jason').uuid
+	console.log("searching for uuid " + uuid);
+	var result = usersArray.findIndex(x=> x.uuid == uuid)
 	if (result === -1) {
 		return false;
 	}

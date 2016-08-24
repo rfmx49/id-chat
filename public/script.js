@@ -91,6 +91,26 @@ function checkUUID() {
 		//no uuid in session storage generate one
 		sessionStorage['UUID'] = uuid();
 	}
+	else {
+		//attempt login with server
+		socket.emit('uuidLogin', sessionStorage['UUID']);
+		socket.on('loginStatus', function(data){
+			if(data != "failed")
+			{
+				$('#modalLogin').modal('show');
+				$('#modalPseudo').modal('hide');
+				$("#alertPseudo").hide();
+				pseudo = $("#pseudoInput").val();
+				console.log(data);
+				$('#welcomeBack').html("<b>" + data.username + "</b>")
+			}
+			else
+			{
+				sessionStorage['UUID'] = uuid();
+				$('#modalPseudo').modal('show');
+			}
+		})
+	}
 }
 
 //genereate a uuid
