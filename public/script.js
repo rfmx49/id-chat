@@ -100,7 +100,7 @@ function checkUUID() {
 				$('#modalLogin').modal('show');
 				$('#modalPseudo').modal('hide');
 				$("#alertPseudo").hide();
-				pseudo = data.username;
+				pseudo = $("#pseudoInput").val();
 				console.log(data);
 				$('#welcomeBack').html("<b>" + data.username + "</b>")
 			}

@@ -57,9 +57,6 @@ io.sockets.on('connection', function (socket) { // First connection
 			socket.broadcast.emit('message', transmit);
 			console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
 		}
-		else {
-			console.log("User not logged in");
-		}
 	});
 	socket.on('privateMessage', function (data) { // Broadcast the message to one
 		var recpiant = getUserAccountByName(data.recpiant);
@@ -110,7 +107,7 @@ io.sockets.on('connection', function (socket) { // First connection
 	});
 	socket.on('uuidLogin', function (uuid) { // Attempt to login with uuid
 		var oldUser = getUserAccountByUUID(uuid);
-		//console.log("user search returned " + oldUser);
+		console.log("user search returned " + oldUser);
 		if (oldUser === false) {
 			console.log("Login Failed for " + uuid);
 			socket.emit('loginStatus', 'failed');
@@ -119,7 +116,6 @@ io.sockets.on('connection', function (socket) { // First connection
 			console.log(usersArray[oldUser]);
 			usersArray[oldUser].userid = socket.id;
 			socket.nickname = usersArray[oldUser].username;
-			socket.emit('pseudoStatus', 'ok');
 			socket.emit('loginStatus', usersArray[oldUser]);
 		}		
 	});
