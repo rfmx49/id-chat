@@ -1,18 +1,3 @@
-#main {
-	padding-top: 10%;
-}
-
-#chatEntries {
-    border: 1px solid grey;
-    border-radius: 5px;
-    background-color: rgba(0,0,0,0);
-    margin-bottom: 20px;
-    margin-left: -5px;
-    margin-right: -5px;
-    height: 40%;
-    box-shadow: 0 0 10px rgba(0,0,0,.5);
-}
-
 /* message received */
 .message {
 	overflow: hidden;
@@ -31,18 +16,6 @@
   	border-radius:10px;
 }
 
-/* speech bubble triangle received*/
-.message:after {
-    content: "";
-    position:absolute;
-    margin-left: -20px;
-    margin-top: -5px;
-    border-left: 12px solid transparent;
-    border-right: 12px solid transparent;
-    border-bottom: 12px solid #F3F6EB;
-    transform:rotate(-45deg);
-}
-
 /* message sent */
 .self {
 	background: #ADF6D7; /* Old browsers */
@@ -50,39 +23,21 @@
     text-align: right;
 }
 
-/* Speech bubble triangle sent*/
-.self:after {
-    content: "";
-    position: absolute;
-    right: 10px;
-    margin-left: -20px;
-    margin-top: -5px;
-    border-left: 12px solid transparent;
-    border-right: 12px solid transparent;
-    border-bottom: 12px solid #ADF6D7;
-    transform:rotate(-90deg) !important;
-}
-
-
 .infos {
 	font-size: 10px;
 	color: #5C5C5C;
 }
+
 .btn-group {	
     float: right;
 }
-#messageInput {
-	width: 50%;
+
+.chatInput {
+	width: 66%;
+	margin-left: 5%;
 	margin-left: 5%;
 }
+
 #entries {
 	margin-top: 10px;
-}
-@-webkit-keyframes flip {
-	0% {
-		-webkit-transform: rotateX( 90deg );
-	}
-	100% {
-		-webkit-transform: rotateX( 0deg );
-	}
 }

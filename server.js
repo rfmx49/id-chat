@@ -38,6 +38,9 @@ app.use(express.static(__dirname + '/public'));
 app.get('/', function(req, res){
   res.render('home.pug');
 });
+app.get('/chat', function(req, res){
+  res.render('chat.pug');
+});
 
 server.listen(appPort);
 // app.listen(appPort);

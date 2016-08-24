@@ -15,10 +15,10 @@ html
 	body
 		div.container-fluid#main
 			ul(class="nav nav-tabs")
-				li(role="presentation" class="active")
+				li(role="presentation")
 					a#navHome(href="/") Home
 				li(role="presentation")
-					a#navChat(href="/chat") Chat
+					a#navChat(href="/chat" class="active") Chat
 				li(role="presentation")
 					a#navUsers(href="#") Users
 				li(role="presentation")
@@ -31,7 +31,7 @@ html
 				div#chatEntriesPanel(class="panel panel-primary ")
 					div(class="panel-heading")
 						h3
-							span#chatTitle GlobalChat
+							span#chatTitle PrivateChat
 					div(class="panel-body")
 						div#chatEntries
 						div.row#entries

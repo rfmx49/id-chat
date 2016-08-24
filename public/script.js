@@ -9,13 +9,20 @@ $(function() {
 	checkUUID();
 	window.setInterval(time, 1000*10);
 	$("#alertPseudo").hide();
-	$('#modalPseudo').modal('show');
-	$("#pseudoSubmit").click(function() {setPseudo()});
-	$("#chatEntries").slimScroll({height: '42%'});
-	submitButton.click(function() {sentMessage();});
+	//Navbar
+	$("#navHome").click(function() {navHome()});
+	$("#navInbox").click(function() {navInbox()});
+	$("#navChat").click(function() {navChat()});
 	setHeight();
+	submitButton.click(function() {sentMessage();});
 	$('#messageInput').keypress(function (e) {
 	if (e.which == 13) {sentMessage();}});
+	if (typeof sessionStorage['username'] === 'undefined') {
+		$('#modalPseudo').modal('show');
+		//set button functions
+	} 
+	$("#pseudoSubmit").click(function() {setPseudo()});
+	
 });
 
 //Socket.io
@@ -85,6 +92,46 @@ function setPseudo() {
 		})
 	}
 }
+
+//navigation
+
+function navHome() {
+	console.log('Clicked Home');
+	$('#mainContent').html("");
+}
+
+function navInbox() {
+	console.log('Clicked Inbox');
+	$('#mainContent').html("");
+}
+
+function navChat() {
+	console.log('Clicked Chat');
+	/*('#mainContent').html('<div id="chatEntriesPanel" class="panel panel-primary">\
+	<div class="panel-heading">\
+		<h3><span id=Private Chat</hr>\
+	</div>\
+	<div class="panel-body">\
+	<div id="#chatEntries"></div>\
+	<div class="row" id="#entries">\
+	<input type="text" id="messageInput></input>\
+	<div class="btn-group" id="submit" data-loading-text="Sending">Send</div>\
+	</div>\
+	</div>');
+	/*
+	div#chatEntriesPanel(class="panel panel-primary ")
+					div(class="panel-heading")
+						h3
+							span#chatTitle GlobalChat
+					div(class="panel-body")
+						div#chatEntries
+						div.row#entries
+							input(type='text')#messageInput
+							div.btn-group
+								button.btn#submit(data-loading-text="Send") Send*/
+}
+
+
 //check to see if uuid is already created
 function checkUUID() {
 	if (typeof sessionStorage['UUID'] === 'undefined') {
@@ -92,17 +139,21 @@ function checkUUID() {
 		sessionStorage['UUID'] = uuid();
 	}
 	else {
+		//check cached login
+		if (typeof sessionStorage['username'] !== 'undefined') {
+			//enter old username to prevent reg screen from popping up
+			pseudo = sessionStorage['username'];
+		}
 		//attempt login with server
 		socket.emit('uuidLogin', sessionStorage['UUID']);
 		socket.on('loginStatus', function(data){
 			if(data != "failed")
 			{
-				$('#modalLogin').modal('show');
 				$('#modalPseudo').modal('hide');
 				$("#alertPseudo").hide();
 				pseudo = data.username;
+				sessionStorage['username'] = data.username;
 				console.log(data);
-				$('#welcomeBack').html("<b>" + data.username + "</b>")
 			}
 			else
 			{
@@ -134,5 +185,9 @@ function time() {
 	});
 }
 function setHeight() {
-	$(".slimScrollDiv").height('603');
+	var slimHeight;
+	slimHeight = $(window).height() *.50;
+	$("#chatEntries").height(slimHeight);
+	$("#chatEntries").slimScroll({height: 'auto'});
+	//$(".slimScrollDiv").height('auto');
 }
