@@ -21,8 +21,7 @@ $(function() {
 		$('#modalPseudo').modal('show');
 		//set button functions
 	} 
-	$("#pseudoSubmit").click(function() {setPseudo()});
-	
+	$("#pseudoSubmit").click(function() {setPseudo()});	
 });
 
 //Socket.io
@@ -37,7 +36,7 @@ socket.on('pseudoStatus', function(msg) {
 	console.log("User Status " + msg);
 });
 socket.on('message', function(data) {
-	addMessage(data['message'], data['pseudo'], new Date().toISOString(), false);
+	addMessage({msg: data['message'], pseudo: data['pseudo'], date: new Date().toISOString(), self:false, restore: false});
 	console.log(data);
 });
 
@@ -53,17 +52,21 @@ function sentMessage() {
 		else 
 		{
 			socket.emit('message', messageContainer.val());
-			addMessage(messageContainer.val(), "Me", new Date().toISOString(), true);
+			addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, restore: false});
 			messageContainer.val('');
 			submitButton.button('loading');
 		}
 	}
 }
-function addMessage(msg, pseudo, date, self) {
-	if(self) var classDiv = "row message self";
+function addMessage(messageData) {
+	if(messageData.self) var classDiv = "row message self";
 	else var classDiv = "row message";
-	$("#chatEntries").append('<div class="'+classDiv+'"><p class="infos"><span class="pseudo">'+pseudo+'</span>, <time class="date" title="'+date+'">'+date+'</time></p><p>' + msg + '</p></div>');
+	$("#chatEntries").append('<div class="'+classDiv+'"><p class="infos"><span class="pseudo">'+messageData.pseudo+'</span>, <time class="date" title="'+messageData.date+'">'+messageData.date+'</time></p><p>' + messageData.msg + '</p></div>');
 	time();
+	//save message to storage
+	//get room name
+	//span#chatTitle GlobalChat
+	msgStoreSave(messageData, $('#chatTitle').text());
 }
 
 function bindButton() {
@@ -93,6 +96,28 @@ function setPseudo() {
 	}
 }
 
+//Message Storage/restore
+
+function msgStoreSave(data, room) {
+	var currentStore;
+	if (typeof sessionStorage['msgStore-' + room] === 'undefined') {
+		currentStore = []
+	}
+	else {
+		currentStore = sessionStorage['msgStore-' + room];
+		currentStore = JSON.parse(currentStore);
+	}	
+	currentStore.push(data);
+	sessionStorage['msgStore-' + room] = JSON.stringify(currentStore);
+}
+
+function msgStoreRestore(room) { 
+	var currentStore = sessionStorage['msgStore-' + room];
+	currentStore = JSON.parse(currentStore);
+	//loop data and send to addMessage(messageData)
+
+}
+
 //navigation
 
 function navHome() {
@@ -107,28 +132,6 @@ function navInbox() {
 
 function navChat() {
 	console.log('Clicked Chat');
-	/*('#mainContent').html('<div id="chatEntriesPanel" class="panel panel-primary">\
-	<div class="panel-heading">\
-		<h3><span id=Private Chat</hr>\
-	</div>\
-	<div class="panel-body">\
-	<div id="#chatEntries"></div>\
-	<div class="row" id="#entries">\
-	<input type="text" id="messageInput></input>\
-	<div class="btn-group" id="submit" data-loading-text="Sending">Send</div>\
-	</div>\
-	</div>');
-	/*
-	div#chatEntriesPanel(class="panel panel-primary ")
-					div(class="panel-heading")
-						h3
-							span#chatTitle GlobalChat
-					div(class="panel-body")
-						div#chatEntries
-						div.row#entries
-							input(type='text')#messageInput
-							div.btn-group
-								button.btn#submit(data-loading-text="Send") Send*/
 }
 
 
