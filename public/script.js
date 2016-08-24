@@ -11,7 +11,7 @@ $(function() {
 	$("#alertPseudo").hide();
 	$('#modalPseudo').modal('show');
 	$("#pseudoSubmit").click(function() {setPseudo()});
-	$("#chatEntries").slimScroll({height: '600px'});
+	$("#chatEntries").slimScroll({height: '42%'});
 	submitButton.click(function() {sentMessage();});
 	setHeight();
 	$('#messageInput').keypress(function (e) {
