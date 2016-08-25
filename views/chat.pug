@@ -27,21 +27,41 @@ html
 					a#navSearch(href="#") Search
 				li(role="presentation")
 					a#navProfile(href="#") Profile
-			div#mainContent
-				div#chatEntriesPanel(class="panel panel-primary ")
-					div(class="panel-heading")
-						h3
-							span#chatTitle PrivateChat
-					div(class="panel-body")
-						div#chatEntries
-						div.row#entries
-							input(type='text')#messageInput.chatInput
-							div.btn-group
-								button.btn#submit(data-loading-text="Send") Send					
-			div#nbUsersDiv
-				p There is 
-					span#nbUsers
-					|  connected user(s).
+			div#mainContent(class="tab-content")
+				//individual chat tabs for users/groups
+				ul(class="nav nav-pills")
+					li(role="presentation")
+						a#navProfile(href="#") Closed Chats
+					li(role="presentation")
+						a#navHome(href="/") Chat 1
+							button(class="close closeTab", type="button") x
+					li(role="presentation")
+						a#navChat(href="/chat" class="active") Chat 2
+							button(class="close closeTab", type="button"  style="display:inline") x
+					li(role="presentation")
+						a#navUsers(href="#") Chat 3
+							button(class="close closeTab", type="button"  style="display:inline") x
+					li(role="presentation")
+						a#navInbox(href="#") Chat 4
+							button(class="close closeTab", type="button"  style="display:inline") x
+					li(role="presentation")
+						a#navSearch(href="#") Chat 5
+							button(class="close closeTab", type="button"  style="display:inline") x
+				div.tab-content
+					div#chatEntriesPanel(class="panel panel-primary ")
+						div(class="panel-heading")
+							h3
+								span#chatTitle PrivateChat
+						div(class="panel-body")
+							div#chatEntries
+							div.row#entries
+								input(type='text')#messageInput.chatInput
+								div.btn-group
+									button.btn#submit(data-loading-text="Send") Send					
+					div#nbUsersDiv
+						p There is 
+							span#nbUsers
+							|  connected user(s).
 	div.modal.fade#modalPseudo(role="dialog")
 		div.modal-dialog
 			div.modal-content

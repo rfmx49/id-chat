@@ -41,3 +41,16 @@
 #entries {
 	margin-top: 10px;
 }
+
+/*for scrollable tabs*/
+.nav-tabs {
+	overflow-x: auto;
+	overflow-y: hidden;
+	display: -webkit-box;
+	display: -moz-box;
+}
+
+.nav-tabs>li {
+	float: none;
+}
+	 
