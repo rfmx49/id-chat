@@ -21,8 +21,19 @@ $(function() {
 		$('#modalPseudo').modal('show');
 		//set button functions
 	} 
-	$("#pseudoSubmit").click(function() {setPseudo()});	
+	$("#pseudoSubmit").click(function() {setPseudo()});
+	onPageLoad();	
 });
+
+function onPageLoad() {
+	//get page name
+	var pageName = $('#chatTitle').text();
+	//check if this is system page
+	if (pageName.indexOf("Chat") != -1) {
+		msgStoreRestore(pageName)
+	}
+	
+}
 
 //Socket.io
 var socket = io.connect();
@@ -36,7 +47,7 @@ socket.on('pseudoStatus', function(msg) {
 	console.log("User Status " + msg);
 });
 socket.on('message', function(data) {
-	addMessage({msg: data['message'], pseudo: data['pseudo'], date: new Date().toISOString(), self:false, restore: false});
+	addMessage({msg: data['message'], pseudo: data['pseudo'], date: new Date().toISOString(), self:false, save: true});
 	console.log(data);
 });
 
@@ -52,7 +63,7 @@ function sentMessage() {
 		else 
 		{
 			socket.emit('message', messageContainer.val());
-			addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, restore: false});
+			addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, save: true});
 			messageContainer.val('');
 			submitButton.button('loading');
 		}
@@ -66,7 +77,7 @@ function addMessage(messageData) {
 	//save message to storage
 	//get room name
 	//span#chatTitle GlobalChat
-	msgStoreSave(messageData, $('#chatTitle').text());
+	if (messageData.save) { msgStoreSave(messageData, $('#chatTitle').text()); }
 }
 
 function bindButton() {
@@ -112,10 +123,17 @@ function msgStoreSave(data, room) {
 }
 
 function msgStoreRestore(room) { 
-	var currentStore = sessionStorage['msgStore-' + room];
-	currentStore = JSON.parse(currentStore);
-	//loop data and send to addMessage(messageData)
-
+	if (typeof sessionStorage['msgStore-' + room] !== 'undefined') {
+		var currentStore = sessionStorage['msgStore-' + room];
+		currentStore = JSON.parse(currentStore);
+		//loop data and send to addMessage(messageData)
+		var restoreMessage;
+		while (currentStore.length) {
+			restoreMessage = currentStore.shift();			
+			restoreMessage.save = false; //do not resave message
+			addMessage(restoreMessage);
+		}
+	}	
 }
 
 //navigation
