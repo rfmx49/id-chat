@@ -32,6 +32,9 @@ function onPageLoad() {
 	if (pageName.indexOf("Chat") != -1) {
 		msgStoreRestore(pageName)
 	}
+	else if (pageName == "User List") {
+		//generate user list
+	}
 	
 }
 
@@ -90,7 +93,11 @@ function bindButton() {
 function setPseudo() {
 	if ($("#pseudoInput").val() != "")
 	{
-		var userData = {username: $("#pseudoInput").val(),age: $("#pseudoAgeInput").val(),sex: $("#pseudoSexInput").val(), uuid: sessionStorage['UUID']}
+		var uuidStorage = sessionStorage['UUID'];
+		sessionStorage.clear();
+		sessionStorage['UUID'] = uuidStorage;
+		//clear chat window
+		var userData = {username: $("#pseudoInput").val(),age: $("#pseudoAgeInput").val(),sex: $("#pseudoSexInput").val(), uuid: uuidStorage};
 		socket.emit('setPseudo', userData);
 		socket.on('pseudoStatus', function(data){
 			if(data == "ok")
@@ -140,23 +147,29 @@ function msgStoreRestore(room) {
 
 function navHome() {
 	console.log('Clicked Home');
-	$('#mainContent').html("");
 }
 
 function navInbox() {
 	console.log('Clicked Inbox');
-	$('#mainContent').html("");
 }
 
 function navChat() {
 	console.log('Clicked Chat');
 }
 
+function navUsers() {
+	console.log('Clicked Users');
+}
+
+function clearChat() {
+	$("#chatEntries").html("");
+}
 
 //check to see if uuid is already created
 function checkUUID() {
 	if (typeof sessionStorage['UUID'] === 'undefined') {
 		//no uuid in session storage generate one
+		sessionStorage.clear();
 		sessionStorage['UUID'] = uuid();
 	}
 	else {

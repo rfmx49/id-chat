@@ -15,6 +15,14 @@ var pug = require('pug');
 //var pseudoArray = ['admin']; //block the admin username (you can disable it)
 var usersArray = ['admin'];
 
+var DataStore = require('nedb');
+db = {};
+db.users = new DataStore({filename: 'users', autoload: true});
+
+
+
+//user object
+
 function userObj(data) {
 	this.username = data.username;
 	this.userid = data.userid;
@@ -41,10 +49,13 @@ app.get('/', function(req, res){
 app.get('/chat', function(req, res){
   res.render('chat.pug');
 });
+app.get('/users', function(req, res){
+  res.render('users.pug');
+});
 
 server.listen(appPort);
 // app.listen(appPort);
-console.log("Server listening on port " + appPort);
+console.log("Server listening on port " + appPort); 
 
 // Handle the socket.io connections
 
@@ -88,8 +99,12 @@ io.sockets.on('connection', function (socket) { // First connection
 			//pseudoArray.push(data.username);
 			console.log(data.uuid);
 			socket.nickname = data.username;
-			usersArray.push(new userObj({username: data.username, userid: socket.id, sex:data.sex, age:data.age, address: socket.handshake.address, uuid: data.uuid}));
-			console.log(JSON.stringify(usersArray));
+			var newUser = new userObj({username: data.username, userid: socket.id, sex:data.sex, age:data.age, address: socket.handshake.address, uuid: data.uuid});
+			usersArray.push(newUser);
+			//nedb add to database
+			db.users.insert(newUser, function (err, newdoc) { 
+				console.log("New user added to database - " + JSON.stringify(newdoc) + " --- " + err);
+			});
 			console.log(socket.sessionId);
 			socket.emit('pseudoStatus', 'ok');
 			console.log("user " + data.username + " connected");
@@ -112,18 +127,34 @@ io.sockets.on('connection', function (socket) { // First connection
 		}
 	});
 	socket.on('uuidLogin', function (uuid) { // Attempt to login with uuid
-		var oldUser = getUserAccountByUUID(uuid);
-		//console.log("user search returned " + oldUser);
-		if (oldUser === false) {
-			console.log("Login Failed for " + uuid);
-			socket.emit('loginStatus', 'failed');
-		}
-		else {
-			console.log(usersArray[oldUser]);
-			usersArray[oldUser].userid = socket.id;
-			socket.nickname = usersArray[oldUser].username;
-			socket.emit('pseudoStatus', 'ok');
-			socket.emit('loginStatus', usersArray[oldUser]);
+		var olduser = db.users.find({"uuid": uuid}, function (err, docs) {
+			console.log("UUID Found = " + JSON.stringify(docs[0]));
+			if (typeof docs[0] === undefined) {
+				console.log("Login Failed for " + uuid);
+				socket.emit('loginStatus', 'failed');
+				return;
+			}
+			else {
+				console.log("User found");
+				logonUser = docs[0];
+				console.log(logonUser);		
+				logonUser.userid = socket.id;
+				socket.nickname = logonUser.username;
+				//update doc in DB
+				db.users.update({_id: logonUser._id}, logonUser,{ upsert: true }, function() {});
+				socket.emit('pseudoStatus', 'ok');
+				socket.emit('loginStatus', logonUser);
+			}
+		});		
+	});
+	socket.on('findUser', function (username) { // Attempt to login with uuid
+		if (username != null) {
+			getUserAccountByName(username);
+		}		
+	});
+	socket.on('findUuidUser', function (uuid) { // Attempt to login with uuid
+		if (username != null) {
+			getUserAccountByUUID(uuid);
 		}		
 	});
 });
@@ -139,6 +170,20 @@ function pseudoSet(socket) { // Test if the user has a name
 }
 
 function getUserAccountByName(username) {
+	var result = db.users.find({"username": username}, function (err, docs) {
+		console.log("Doc = " + JSON.stringify(docs));
+		console.log("err = " + err);		
+	});
+}
+
+function getUserAccountByUUID(uuid) {
+	var result = db.users.find({"uuid": uuid}, function (err, docs) {
+		console.log("Doc = " + JSON.stringify(docs));
+		console.log("err = " + err);		
+	});
+}
+
+function getUserAccountByNameold(username) {
 	//object1.find(x=> x.name === 'Jason').uuid
 	//usersArray.find(x=> x.username ==='Jason').uuid
 	var result = usersArray.findIndex(x=> x.username == username)
@@ -150,7 +195,7 @@ function getUserAccountByName(username) {
 	}
 }
 
-function getUserAccountByUUID(uuid) {
+function getUserAccountByUUIDold(uuid) {
 	//object1.find(x=> x.name === 'Jason').uuid
 	//usersArray.find(x=> x.username ==='Jason').uuid
 	console.log("searching for uuid " + uuid);
