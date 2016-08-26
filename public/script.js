@@ -9,14 +9,17 @@ $(function() {
 	checkUUID();
 	window.setInterval(time, 1000*10);
 	$("#alertPseudo").hide();
-	//Navbar
+	//Click handlers
 	$("#navHome").click(function() {navHome()});
 	$("#navInbox").click(function() {navInbox()});
 	$("#navChat").click(function() {navChat()});
-	setHeight();
 	submitButton.click(function() {sentMessage();});
 	$('#messageInput').keypress(function (e) {
 	if (e.which == 13) {sentMessage();}});
+	$('body').on('click', 'a.user-list-item', function() {
+		loadUser($(this.children[0]).text());
+	});
+	setHeight();
 	if (typeof sessionStorage['username'] === 'undefined') {
 		$('#modalPseudo').modal('show');
 		//set button functions
@@ -25,17 +28,54 @@ $(function() {
 	onPageLoad();	
 });
 
+//PAGE handling
 function onPageLoad() {
 	//get page name
 	var pageName = $('#chatTitle').text();
 	//check if this is system page
 	if (pageName.indexOf("Chat") != -1) {
-		msgStoreRestore(pageName)
+		msgStoreRestore(pageName);
 	}
 	else if (pageName == "User List") {
 		//generate user list
+		getNetworkUsers();
+		$(".user-list-item").click(function() {loadUser(this)});
 	}
-	
+	else if (pageName == "Private") {
+		//private chat window
+		//load all chat tabs and display the most recent
+		$('body').on('click', 'a.user-chat-item', function() {
+			console.log(this.text);
+			$("#chatEntries").html("");
+			$("#chatTitle").text('Chatting with ' + this.text);
+			msgStoreRestore('Chatting with ' + this.text);
+			sessionStorage.lastActiveChat = this.text;
+			$(this.parentElement).addClass('active').siblings().removeClass('active');
+		});
+		var activeChats = sessionStorage.activeChats;
+		if (typeof activeChats === 'undefined') {
+			location.href = 'users';
+			return;
+		}
+		else {
+			activeChats = JSON.parse(activeChats);
+			var tabHtml;
+			var lastActive = sessionStorage.lastActiveChat;
+			for (var i=0;i < activeChats.length; i++) {
+				//create tabs
+				if (activeChats[i].username == lastActive) {
+					tabHtml = '<li role="presentation" class="active"><a class="user-chat-item" id="' + activeChats[i].username + '"href="#">' + activeChats[i].username + '<span class="glyphicon glyphicon glyphicon-remove"></span></a></li>';
+					$("#chatTitle").text('Chatting with ' + activeChats[i].username);
+					msgStoreRestore('Chatting with ' + activeChats[i].username);
+				}
+				else {
+					tabHtml = '<li role="presentation" ><a class="user-chat-item" id="' + activeChats[i].username + '"href="#">' + activeChats[i].username + '<span class="glyphicon glyphicon glyphicon-remove"></span></a></li>';
+				}
+				$('#userChatBar').append(tabHtml);
+			}
+			//go to active tab
+		}
+	}
 }
 
 //Socket.io
@@ -49,9 +89,32 @@ socket.on('nbUsers', function(msg) {
 socket.on('pseudoStatus', function(msg) {
 	console.log("User Status " + msg);
 });
+//for global messages
 socket.on('message', function(data) {
-	addMessage({msg: data['message'], pseudo: data['pseudo'], date: new Date().toISOString(), self:false, save: true});
-	console.log(data);
+	//are we on the global chat if not discard
+	var chatTitle = $('#chatTitle').text().replace('Chatting with ','');
+	if (chatTitle == 'GlobalChat') {
+		addMessage({msg: data.message, pseudo: data.pseudo, date: new Date().toISOString(), self:false, save: true, read: true});
+	}
+	else {
+		//save message for later.
+		//chage to discard to save build up
+		return;
+		//addMessage({msg: data.message, pseudo: data.pseudo, date: new Date().toISOString(), self:false, save: true, read: false});
+	}
+});
+//for private messages
+socket.on('messagePrivate', function(data) {
+	//are we on the window?
+	//get chat title.
+	var chatTitle = $('#chatTitle').text().replace('Chatting with ','');
+	if (chatTitle == data.pseudo) { 
+		addMessage({msg: data.message, pseudo: data.pseudo, date: new Date().toISOString(), self:false, save: true, read: true});
+	}
+	else {
+		//save message for later.
+		addMessage({msg: data.message, pseudo: data.pseudo, date: new Date().toISOString(), self:false, save: true, read: false});
+	}
 });
 
 //Help functions
@@ -65,18 +128,43 @@ function sentMessage() {
 		}
 		else 
 		{
-			socket.emit('message', messageContainer.val());
-			addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, save: true});
-			messageContainer.val('');
-			submitButton.button('loading');
+			//check if this is a private message
+			//get chattitle
+			var chatTitle = $('#chatTitle').text().replace('Chatting with ','');
+			if (chatTitle == 'GlobalChat') {
+				socket.emit('message', messageContainer.val());
+				addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true});
+				messageContainer.val('');
+				submitButton.button('loading');
+			}
+			else {
+				var messagePM = {recpiant: chatTitle, message : messageContainer.val()};
+				
+				socket.emit('messagePrivate', messagePM);
+				addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true});
+				messageContainer.val('');
+				submitButton.button('loading');
+			}
+			
 		}
 	}
 }
 function addMessage(messageData) {
-	if(messageData.self) var classDiv = "row message self";
-	else var classDiv = "row message";
-	$("#chatEntries").append('<div class="'+classDiv+'"><p class="infos"><span class="pseudo">'+messageData.pseudo+'</span>, <time class="date" title="'+messageData.date+'">'+messageData.date+'</time></p><p>' + messageData.msg + '</p></div>');
-	time();
+	if	(messageData.self) {
+		var classDiv = "row message self";
+	}
+	else {
+		var classDiv = "row message";
+	}
+	if (messageData.read) {
+		$("#chatEntries").append('<div class="'+classDiv+'"><p class="infos"><span class="pseudo">'+messageData.pseudo+'</span>, <time class="date" title="'+messageData.date+'">'+messageData.date+'</time></p><p>' + messageData.msg + '</p></div>');
+		time();		
+		$("#chatEntries").slimScroll({ scrollTo: $("#chatEntries")[0].scrollHeight +'px'})
+	}
+	//mark message waiting
+	messageData.read = true;
+
+	
 	//save message to storage
 	//get room name
 	//span#chatTitle GlobalChat
@@ -116,7 +204,7 @@ function setPseudo() {
 	}
 }
 
-function getNetworkUsers() {
+function getNetworkUsers(page) {
 	var currentPage = 1;
 	$("#chatEntries").html("");
 	socket.emit('retrieveUserList', currentPage);
@@ -142,10 +230,38 @@ function displayUser(userData) {
 	var userRowHtml;
 	userRowHtml = '<div class="row">';
 	for (var i = 0; i < userData.length; i++) {
-		userRowHtml = userRowHtml + '<div class="col-md-4"><a href="#" class="list-group-item"><h4 class="list-group-item-heading">' + userData[i].username + '</h4><p class="list-group-item-text">' + userData[i].age + userData[i].sex +'</p></a></div>'
+		userRowHtml = userRowHtml + '<div class="col-md-4"><a href="#" class="list-group-item user-list-item"><h4 class="list-group-item-heading">' + userData[i].username + '</h4><p class="list-group-item-text">' + userData[i].age + userData[i].sex +'</p></a></div>'
 	}
 	userRowHtml = userRowHtml + '</div>';
 	$('#chatEntries').append(userRowHtml);
+}
+
+function loadUser(username) {
+	console.log(username);
+	//add to activechat seesions
+	var currentActiveChats = sessionStorage.activeChats;
+	if (typeof currentActiveChats === 'undefined') { 
+		currentActiveChats = []; 
+	}
+	else {
+		currentActiveChats = JSON.parse(currentActiveChats);
+	}
+	//usersArray.find(x=> x.username ==='Jason').uuid
+	var result = currentActiveChats.findIndex(x=> x.username === username)
+	if (result == -1) {
+		//has not been added add to front of list.
+		currentActiveChats.unshift({username: username, unread:0});
+	}
+	else {
+		//place back at front of list
+		var userDetails = currentActiveChats[result];
+		currentActiveChats.splice(result, 1);
+		currentActiveChats.unshift(userDetails);
+	}
+	sessionStorage.activeChats = JSON.stringify(currentActiveChats);
+	sessionStorage.lastActiveChat = username;
+	//load chat window
+	location.href = 'chat';
 }
 
 //Message Storage/restore
@@ -180,6 +296,7 @@ function msgStoreRestore(room) {
 //navigation
 
 function navHome() {
+	sessionStorage.lastActiveChat = 'GlobalChat';
 	console.log('Clicked Home');
 }
 
@@ -258,6 +375,6 @@ function setHeight() {
 	var slimHeight;
 	slimHeight = $(window).height() *.50;
 	$("#chatEntries").height(slimHeight);
-	$("#chatEntries").slimScroll({height: 'auto'});
+	$("#chatEntries").slimScroll({height: 'auto', start: 'bottom'});
 	//$(".slimScrollDiv").height('auto');
 }

@@ -3,11 +3,11 @@ html
 	head
 		meta(name="viewport" content="width=device-width, initial-scale=1")
 		title Chat
-		link(rel="stylesheet", href="lib/bootstrap.min.css")
+		link(rel="stylesheet", href="lib/bootstrap-3.3.7-dist/css/bootstrap.min.css")
 		link(rel="stylesheet", href="style.css")
 		script(src='lib/jquery-3.1.0.min.js')
 		script(src="/socket.io/socket.io.js")
-		script(src="lib/bootstrap.min.js")
+		script(src="lib/bootstrap-3.3.7-dist/js/bootstrap.min.js")
 		script(src='lib/jquery.slimscroll.min.js')
 		script(src="lib/jquery.timeago.js")
 		script(src="script.js")
@@ -16,8 +16,8 @@ html
 			ul(class="nav nav-tabs")
 				li(role="presentation")
 					a#navHome(href="/") Home
-				li(role="presentation")
-					a#navChat(href="/chat" class="active") Chat
+				li(role="presentation" class="active")
+					a#navChat(href="/chat") Chat
 				li(role="presentation")
 					a#navUsers(href="/users") Users
 				li(role="presentation")
@@ -28,29 +28,14 @@ html
 					a#navProfile(href="#") Profile
 			div#mainContent(class="tab-content")
 				//individual chat tabs for users/groups
-				ul(class="nav nav-pills")
+				ul#userChatBar(class="nav nav-pills")
 					li(role="presentation")
-						a#navProfile(href="#") Closed Chats
-					li(role="presentation")
-						a#navHome(href="/") Chat 1
-							button(class="close closeTab", type="button") x
-					li(role="presentation")
-						a#navChat(href="/chat" class="active") Chat 2
-							button(class="close closeTab", type="button"  style="display:inline") x
-					li(role="presentation")
-						a#navUsers(href="#") Chat 3
-							button(class="close closeTab", type="button"  style="display:inline") x
-					li(role="presentation")
-						a#navInbox(href="#") Chat 4
-							button(class="close closeTab", type="button"  style="display:inline") x
-					li(role="presentation")
-						a#navSearch(href="#") Chat 5
-							button(class="close closeTab", type="button"  style="display:inline") x
+						a#navProfile(href="#" class="user-chat-item") Closed Chats
 				div.tab-content
 					div#chatEntriesPanel(class="panel panel-primary ")
 						div(class="panel-heading")
 							h3
-								span#chatTitle PrivateChat
+								span#chatTitle Private
 						div(class="panel-body")
 							div#chatEntries
 							div.row#entries

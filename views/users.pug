@@ -3,22 +3,22 @@ html
 	head
 		meta(name="viewport" content="width=device-width, initial-scale=1")
 		title Chat
-		link(rel="stylesheet", href="lib/bootstrap.min.css")
+		link(rel="stylesheet", href="lib/bootstrap-3.3.7-dist/css/bootstrap.min.css")
 		link(rel="stylesheet", href="style.css")
 		script(src='lib/jquery-3.1.0.min.js')
 		script(src="/socket.io/socket.io.js")
-		script(src="lib/bootstrap.min.js")
+		script(src="lib/bootstrap-3.3.7-dist/js/bootstrap.min.js")
 		script(src='lib/jquery.slimscroll.min.js')
 		script(src="lib/jquery.timeago.js")
 		script(src="script.js")
 	body
 		div.container-fluid#main
 			ul(class="nav nav-tabs")
-				li(role="presentation" class="active")
+				li(role="presentation")
 					a#navHome(href="/") Home
 				li(role="presentation")
 					a#navChat(href="/chat") Chat
-				li(role="presentation")
+				li(role="presentation" class="active")
 					a#navUsers(href="/users") Users
 				li(role="presentation")
 					a#navInbox(href="#") Inbox

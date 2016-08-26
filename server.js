@@ -75,22 +75,8 @@ io.sockets.on('connection', function (socket) { // First connection
 			console.log("User not logged in");
 		}
 	});
-	socket.on('privateMessage', function (data) { // Broadcast the message to one
-		var recpiant = getUserAccountByName(data.recpiant);
-		if (recpiant == false) {
-			socket.emit('pmStatus', 'nouser');
-		}
-		else {
-			console.log(usersArray[recpiant]);
-			if(pseudoSet(socket))
-			{
-				var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : "PRIVATE: " + data};
-				//io.sockets.socket(usernames[usr]).emit('msg_user_handle', username, msg);
-				//socket.broadcast.emit('message', transmit);
-				socket.broadcast.to(usersArray[recpiant].userid).emit('message', transmit);
-				console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
-			}
-		}
+	socket.on('messagePrivate', function (data) { // Broadcast the message to one
+		sendPrivateMessage(data, socket);
 	});
 	socket.on('setPseudo', function (data) { // Assign a name to the user
 		//if (pseudoArray.indexOf(data.username) == -1) // Test if the name is already taken
@@ -100,7 +86,7 @@ io.sockets.on('connection', function (socket) { // First connection
 			console.log(data.uuid);
 			socket.nickname = data.username;
 			var newUser = new userObj({username: data.username, userid: socket.id, sex:data.sex, age:data.age, address: socket.handshake.address, uuid: data.uuid});
-			usersArray.push(newUser);
+			//usersArray.push(newUser);
 			//nedb add to database
 			db.users.insert(newUser, function (err, newdoc) { 
 				console.log("New user added to database - " + JSON.stringify(newdoc) + " --- " + err);
@@ -126,7 +112,7 @@ io.sockets.on('connection', function (socket) { // First connection
 			//pseudoArray.slice(index - 1, 1);
 		}
 	});
-	socket.on('uuidLogin', function (uuid) { // Attempt to login with uuid
+	socket.on('uuidLogin', function(uuid) { // Attempt to login with uuid
 		var olduser = db.users.find({"uuid": uuid}, function (err, docs) {
 			console.log("UUID Found = " + JSON.stringify(docs));
 			console.log(docs.length);
@@ -165,6 +151,26 @@ io.sockets.on('connection', function (socket) { // First connection
 				getUsers();
 	});
 });
+
+function sendPrivateMessage(data, socket) {
+	//get user from database
+	console.log("Data post 1: " + JSON.stringify(data));
+	var recpiant = db.users.find({"username": data.recpiant}, function (err, docs) {
+		console.log("UserName found = " + JSON.stringify(docs[0]));
+		console.log("Data post 2: " + JSON.stringify(data));
+		if (docs.length == 0) {
+			console.log("PM to unidentified user " + uuid);
+			socket.emit('pmStatus', 'user-not-exist');
+			return;
+		}
+		else {
+			/*console.log("PM received for " + data.recpiant + " found the following user " + docs[0].username);
+			console.log("the message is " + data.message + " to " + docs[0].userid + " from " + socket.nickname);*/
+			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message};
+			socket.broadcast.to(docs[0].userid).emit('messagePrivate', transmit);
+		}			
+	});
+}
 
 function reloadUsers() { // Send the count of the users to all
 	io.sockets.emit('nbUsers', {"nb": users});
