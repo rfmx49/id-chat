@@ -17,7 +17,7 @@ var usersArray = ['admin'];
 
 var DataStore = require('nedb');
 db = {};
-db.users = new DataStore({filename: 'users', autoload: true});
+db.users = new DataStore({filename: 'users.db', autoload: true});
 
 
 
@@ -30,7 +30,7 @@ function userObj(data) {
 	this.age = data.age;
 	this.address = data.address;
 	this.uuid = data.uuid;
-	this.created = new Date().toISOString();
+	this.lastactive = new Date().toISOString();
 }
 
 // Views Options
@@ -154,9 +154,15 @@ io.sockets.on('connection', function (socket) { // First connection
 		}		
 	});
 	socket.on('findUuidUser', function (uuid) { // Attempt to login with uuid
-		if (username != null) {
+		if (uuid != null) {
 			getUserAccountByUUID(uuid);
 		}		
+	});
+	socket.on('retrieveUserList', function (data) { // Attempt to login with uuid
+				getUsers(50, socket);
+	});
+	socket.on('debugFunction', function (data) { // Attempt to login with uuid
+				getUsers();
 	});
 });
 
@@ -184,27 +190,12 @@ function getUserAccountByUUID(uuid) {
 	});
 }
 
-function getUserAccountByNameold(username) {
-	//object1.find(x=> x.name === 'Jason').uuid
-	//usersArray.find(x=> x.username ==='Jason').uuid
-	var result = usersArray.findIndex(x=> x.username == username)
-	if (result === -1) {
-		return false;
-	}
-	else {
-		return result;
-	}
-}
-
-function getUserAccountByUUIDold(uuid) {
-	//object1.find(x=> x.name === 'Jason').uuid
-	//usersArray.find(x=> x.username ==='Jason').uuid
-	console.log("searching for uuid " + uuid);
-	var result = usersArray.findIndex(x=> x.uuid == uuid)
-	if (result === -1) {
-		return false;
-	}
-	else {
-		return result;
-	}
+function getUsers(qty, socket) {
+	//var result = db.users.find({"uuid": {$exists: true}}, {username: 1, age: 1, sex: 1}, function (err, docs) {
+	var result = db.users.find({"uuid": {$exists: true}}, {username: 1, age: 1, sex: 1, _id: 0}).sort({lastactive: 1}).exec(function (err, docs) {	
+		console.log("Doc = " + JSON.stringify(docs));
+		console.log("err = " + err);
+		console.log("test = " + socket.id);
+		socket.emit('userListAnswer', docs);
+	});
 }

@@ -90,6 +90,8 @@ function bindButton() {
 		else submitButton.button('reset');
 	});
 }
+
+//User login
 function setPseudo() {
 	if ($("#pseudoInput").val() != "")
 	{
@@ -112,6 +114,38 @@ function setPseudo() {
 			}
 		})
 	}
+}
+
+function getNetworkUsers() {
+	var currentPage = 1;
+	$("#chatEntries").html("");
+	socket.emit('retrieveUserList', currentPage);
+
+	socket.on('userListAnswer', function(data){
+			console.log(data);
+			var displayRow = [];
+			for (var i = 0; i < data.length; i++) {
+				console.log("Displaying user " + i + ": " + data[i].username);
+				if (i !=0 && ((i+1)%3 == 0 || i+1 == data.length)) {
+					displayRow.push(data[i]);
+					displayUser(displayRow);
+					displayRow = [];
+				}
+				else {
+					displayRow.push(data[i]);
+				}
+			}
+		})
+}
+
+function displayUser(userData) {
+	var userRowHtml;
+	userRowHtml = '<div class="row">';
+	for (var i = 0; i < userData.length; i++) {
+		userRowHtml = userRowHtml + '<div class="col-md-4"><a href="#" class="list-group-item"><h4 class="list-group-item-heading">' + userData[i].username + '</h4><p class="list-group-item-text">' + userData[i].age + userData[i].sex +'</p></a></div>'
+	}
+	userRowHtml = userRowHtml + '</div>';
+	$('#chatEntries').append(userRowHtml);
 }
 
 //Message Storage/restore
@@ -160,6 +194,8 @@ function navChat() {
 function navUsers() {
 	console.log('Clicked Users');
 }
+
+//clear chat window
 
 function clearChat() {
 	$("#chatEntries").html("");

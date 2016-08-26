@@ -16,6 +16,23 @@
   	border-radius:10px;
 }
 
+.message {
+	overflow: hidden;
+	padding: 0 12px;
+	color: black;
+	background: #F3F6EB; /* Old browsers */
+	float: left;
+	margin-left: 10px;
+	margin-right: 40px;
+	margin-bottom: 10px;
+	margin-top: 5px;
+	width: 90%;
+
+    -webkit-border-radius:10px;
+ 	-moz-border-radius:10px;
+  	border-radius:10px;
+}
+
 /* message sent */
 .self {
 	background: #ADF6D7; /* Old browsers */
