@@ -128,9 +128,8 @@ io.sockets.on('connection', function (socket) { // First connection
 	});
 	socket.on('uuidLogin', function (uuid) { // Attempt to login with uuid
 		var olduser = db.users.find({"uuid": uuid}, function (err, docs) {
-			console.log("UUID Found = " + JSON.stringify(docs));
-			console.log(docs.length);
-			if (docs.length == 0) {
+			console.log("UUID Found = " + JSON.stringify(docs[0]));
+			if (typeof docs[0] === undefined) {
 				console.log("Login Failed for " + uuid);
 				socket.emit('loginStatus', 'failed');
 				return;
