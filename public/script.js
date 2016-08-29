@@ -52,6 +52,22 @@ function onPageLoad() {
 			sessionStorage.lastActiveChat = this.text;
 			$(this.parentElement).addClass('active').siblings().removeClass('active');
 		});
+		//close tab
+		$('body').on('click', 'span.glyphicon-remove', function(event) {
+			event.stopPropagation();
+			var chatName = $($('span.glyphicon-remove')[0].closest('a')).text();
+			//remove name from active chat list
+			var currentActiveChats = sessionStorage.activeChats;
+			currentActiveChats = JSON.parse(currentActiveChats);
+			var currentChat = currentActiveChats.findIndex(x=> x.username === chatName);
+			currentActiveChats.splice(currentChat,1);
+			sessionStorage.activeChats = JSON.stringify(currentActiveChats);
+			$($(this)[0].closest('li')).remove();
+			//what to do when closing active tab...
+			//go to nearest tab
+			//go to closed tab list when no other tabs availible.
+			//TODO add tab to closed tabs list
+		});
 		var activeChats = sessionStorage.activeChats;
 		if (typeof activeChats === 'undefined') {
 			location.href = 'users';
