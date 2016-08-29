@@ -46,25 +46,6 @@ html
 						p There is 
 							span#nbUsers
 							|  connected user(s).
-	div.modal.fade#modalPseudo(role="dialog")
-		div.modal-dialog
-			div.modal-content
-				div.modal-header
-					h3 Guest Login Form
-				div.modal-body
-					p Choose a name :
-					input(type='text')#pseudoInput
-					div.alert.alert-error#alertPseudo
-						| This name is already used ! Choose another one.
-					p Set your age :
-					input(type='text')#pseudoAgeInput
-					p Set your sex :
-						select#pseudoSexInput
-							option M
-							option F
-							option ?
-					div.modal-footer
-					button.btn.btn-primary#pseudoSubmit Go to the chat
 	div.modal.fade#modalInfos(role="dialog")
 		div.modal-dialog
 			div.modal-content

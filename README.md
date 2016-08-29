@@ -25,6 +25,13 @@ To use it, you need Node.js.
 	- better user matrix
 	- notifying user of failed socket attepmts
 	--error handling in general
+	- better chat tabs with notifications.
+	- user timeout and removal on server
+	-- more accurate user count.
+	- identicons
+	- group messaging
+	- changing style
+	-- night theme
 
 ### Credits
 

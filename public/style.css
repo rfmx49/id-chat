@@ -33,6 +33,10 @@
   	border-radius:10px;
 }
 
+.alert-error {
+	color = 'red';
+}
+
 /* message sent */
 .self {
 	background: #ADF6D7; /* Old browsers */

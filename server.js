@@ -80,8 +80,32 @@ io.sockets.on('connection', function (socket) { // First connection
 	});
 	socket.on('setPseudo', function (data) { // Assign a name to the user
 		//if (pseudoArray.indexOf(data.username) == -1) // Test if the name is already taken
+
+		if (data.username == "") {
+			console.log("alertPseudoBlank");
+			socket.emit('alertPseudoBlank', 'ok');
+			return;
+		}
+		else if (data.username.length > 14) {
+			console.log("alertPseudoLong");
+			socket.emit('alertPseudoLong', 'ok');
+			return;
+		}
+		else if (typeof data.country === 'undefined') {
+			console.log("alertPseudoCountry");
+			socket.emit('alertPseudoCountry', 'ok');
+			return;
+		}
+		else if (data.region == "") {
+			console.log("alertPseudoRegion");
+			socket.emit('alertPseudoRegion', 'ok');
+			return;
+		}
+		
 		if (usersArray.findIndex(x=> x.username == data.username) == -1) 
 		{
+			//check for blank entries, JS on cleint side should have picked this up unless socket request is sent seperatly.
+			
 			//pseudoArray.push(data.username);
 			console.log(data.uuid);
 			socket.nickname = data.username;

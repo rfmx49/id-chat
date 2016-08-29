@@ -8,7 +8,6 @@ $(function() {
 	bindButton();
 	checkUUID();
 	window.setInterval(time, 1000*10);
-	$("#alertPseudo").hide();
 	//Click handlers
 	$("#navHome").click(function() {navHome()});
 	$("#navInbox").click(function() {navInbox()});
@@ -19,9 +18,23 @@ $(function() {
 	$('body').on('click', 'a.user-list-item', function() {
 		loadUser($(this.children[0]).text());
 	});
+	/*$('body').on('click', 'select#pseudoAgeInput', function() {
+		console.log('Age List Clicked');
+		var ageListHtml;
+		for (var i = 18;i<90;i++) {
+			ageListHtml = ageListHtml + '<option value="' + i + '">' + i + '</option>';
+		}
+		$('#pseudoAgeInput').html(ageListHtml);
+	});*/
+	
 	setHeight();
 	if (typeof sessionStorage['username'] === 'undefined') {
-		$('#modalPseudo').modal('show');
+		if (location.pathname == '/' ) {
+			$('#modalPseudo').modal('show');
+		}
+		else {
+			location.href = '/';
+		}
 		//set button functions
 	} 
 	$("#pseudoSubmit").click(function() {setPseudo()});
@@ -33,6 +46,13 @@ function onPageLoad() {
 	//get page name
 	var pageName = $('#chatTitle').text();
 	//check if this is system page
+	if (pageName == 'GlobalChat') {
+		$("#alertPseudo").hide();
+		$("#alertPseudoBlank").hide();
+		$("#alertPseudoLong").hide();
+		$("#alertPseudoCountry").hide();
+		$("#alertPseudoRegion").hide();
+	}
 	if (pageName.indexOf("Chat") != -1) {
 		msgStoreRestore(pageName);
 	}
@@ -140,7 +160,12 @@ function sentMessage() {
 	{
 		if (pseudo == "") 
 		{
-			$('#modalPseudo').modal('show');
+			if (location.pathname == '/' ) {
+				$('#modalPseudo').modal('show');
+			}
+			else {
+				location.href = '/';
+			}
 		}
 		else 
 		{
@@ -197,27 +222,65 @@ function bindButton() {
 
 //User login
 function setPseudo() {
-	if ($("#pseudoInput").val() != "")
-	{
-		var uuidStorage = sessionStorage['UUID'];
-		sessionStorage.clear();
-		sessionStorage['UUID'] = uuidStorage;
-		//clear chat window
-		var userData = {username: $("#pseudoInput").val(),age: $("#pseudoAgeInput").val(),sex: $("#pseudoSexInput").val(), uuid: uuidStorage};
-		socket.emit('setPseudo', userData);
-		socket.on('pseudoStatus', function(data){
-			if(data == "ok")
-			{
-				$('#modalPseudo').modal('hide');
-				$("#alertPseudo").hide();
-				pseudo = $("#pseudoInput").val();
-			}
-			else
-			{
-				$("#alertPseudo").slideDown();
-			}
-		})
+	var uuidStorage = sessionStorage['UUID'];
+	sessionStorage.clear();
+	sessionStorage['UUID'] = uuidStorage;
+	//clear chat window
+	//get varibles from form
+	
+	var userData = {username: $("#pseudoInput").val(),age: $("#pseudoAgeInput").val(),sex: $("#pseudoSexInput").val(), uuid: uuidStorage, country: $("#pseudoCountryInput").val(), region: $("#pseudoRegionInput").val()};
+	//client side check of varibles
+	//Name not blacnk and smaller than 14 characters
+	if (userData.username == "") {
+		setPseudoHideAlerts();
+		$("#alertPseudoBlank").show();
+		console.log("alertPseudoBlank");
+		return;
 	}
+	else if (userData.username.length > 14) {
+		setPseudoHideAlerts();
+		$("#alertPseudoLong").show();
+		console.log("alertPseudoLong");
+		return;
+	}
+	else if (typeof userData.country === 'undefined') {
+		setPseudoHideAlerts();
+		$("#alertPseudoCountry").show();
+		console.log("alertPseudoCountry");
+		return;
+	}
+	else if (userData.region == "") {
+		setPseudoHideAlerts();
+		$("#alertPseudoRegion").show();
+		console.log("alertPseudoRegion");
+		return;
+	}
+	//Age above 18
+
+	//country selected
+
+	//region selected
+	socket.emit('setPseudo', userData);
+	socket.on('pseudoStatus', function(data){
+		if(data == "ok")
+		{
+			$('#modalPseudo').modal('hide');
+			setPseudoHideAlerts();
+			pseudo = $("#pseudoInput").val();
+		}
+		else
+		{
+			$("#alertPseudo").slideDown();
+		}
+	})
+}
+
+function setPseudoHideAlerts() {
+	$("#alertPseudo").hide();
+	$("#alertPseudoBlank").hide();
+	$("#alertPseudoLong").hide();
+	$("#alertPseudoCountry").hide();
+	$("#alertPseudoRegion").hide();
 }
 
 function getNetworkUsers(page) {
@@ -361,7 +424,12 @@ function checkUUID() {
 			else
 			{
 				sessionStorage['UUID'] = uuid();
-				$('#modalPseudo').modal('show');
+				if (location.pathname == '/' ) {
+					$('#modalPseudo').modal('show');
+				}
+				else {
+					location.href = '/';
+				}
 			}
 		})
 	}

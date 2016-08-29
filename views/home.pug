@@ -10,6 +10,7 @@ html
 		script(src="lib/bootstrap-3.3.7-dist/js/bootstrap.min.js")
 		script(src='lib/jquery.slimscroll.min.js')
 		script(src="lib/jquery.timeago.js")
+		script(src="lib/jquery.crs.min.js")
 		script(src="script.js")
 	body
 		div.container-fluid#main
@@ -47,17 +48,48 @@ html
 				div.modal-header
 					h3 Guest Login Form
 				div.modal-body
-					p Choose a name :
-					input(type='text')#pseudoInput
-					div.alert.alert-error#alertPseudo
-						| This name is already used ! Choose another one.
-					p Set your age :
-					input(type='text')#pseudoAgeInput
-					p Set your sex :
-						select#pseudoSexInput
-							option M
-							option F
-							option ?
+					div#formContainer.modal-body
+						div.row
+							div.col-md-12
+								p 
+									b Choose a name :
+									input(type='text')#pseudoInput
+									div.alert.alert-danger#alertPseudo
+										| This name is already used ! Choose another one.
+									div.alert.alert-danger#alertPseudoBlank
+										| Your name cannot be blank.
+									div.alert.alert-danger#alertPseudoLong
+										| Your username cannot be longer than 14 characters.
+						div.row
+							div.col-md-6
+								p 
+									b Set your age :
+									- var ages = 18
+									select#pseudoAgeInput
+										while ages < 90
+											option= ages
+											- ages++;
+							div.col-md-6
+								p 
+									b Set your sex :
+									- var sexes = ['Female', 'Male', 'Couple', 'Other']
+									select#pseudoSexInput
+										each sex in sexes
+											option= sex
+						div.row
+							div.col-md-4
+								p 
+									b Country :
+									select#pseudoCountyInput.crs-country(data-region-id="pseudoRegionInput")
+									div.alert.alert-danger#alertPseudoCountry
+										| Pleace choose a country.
+						div.row
+							div.col-md-3
+								P 
+									b Region
+									select#pseudoRegionInput
+									div.alert.alert-danger#alertPseudoRegion
+										| Please choose a country and a region.
 					div.modal-footer
 					button.btn.btn-primary#pseudoSubmit Go to the chat
 	div.modal.fade#modalInfos(role="dialog")
