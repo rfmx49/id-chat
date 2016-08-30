@@ -32,6 +32,8 @@ To use it, you need Node.js.
 	- group messaging
 	- changing style
 	-- night theme
+	-clicking users in global chat to open chat window
+	
 
 ### Credits
 

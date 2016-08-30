@@ -67,9 +67,10 @@ function onPageLoad() {
 		$('body').on('click', 'a.user-chat-item', function() {
 			console.log(this.text);
 			$("#chatEntries").html("");
-			$("#chatTitle").text('Chatting with ' + this.text);
-			msgStoreRestore('Chatting with ' + this.text);
-			sessionStorage.lastActiveChat = this.text;
+			var chatTitle = $.trim(this.text)
+			$("#chatTitle").text('Chatting with ' + chatTitle);
+			msgStoreRestore('Chatting with ' + chatTitle);
+			sessionStorage.lastActiveChat = chatTitle;
 			$(this.parentElement).addClass('active').siblings().removeClass('active');
 		});
 		//close tab
@@ -100,12 +101,12 @@ function onPageLoad() {
 			for (var i=0;i < activeChats.length; i++) {
 				//create tabs
 				if (activeChats[i].username == lastActive) {
-					tabHtml = '<li role="presentation" class="active"><a class="user-chat-item" id="' + activeChats[i].username + '"href="#">' + activeChats[i].username + '<span class="glyphicon glyphicon glyphicon-remove"></span></a></li>';
+					tabHtml = '<li role="presentation" class="active"><a class="user-chat-item" id="' + activeChats[i].username + '"href="#"><span class="glyphicon glyphicon glyphicon-envelope mail-read" id="' + activeChats[i].username + '-mail"></span> ' + activeChats[i].username + ' <span class="glyphicon glyphicon glyphicon-remove"></span></a></li>';
 					$("#chatTitle").text('Chatting with ' + activeChats[i].username);
 					msgStoreRestore('Chatting with ' + activeChats[i].username);
 				}
 				else {
-					tabHtml = '<li role="presentation" ><a class="user-chat-item" id="' + activeChats[i].username + '"href="#">' + activeChats[i].username + '<span class="glyphicon glyphicon glyphicon-remove"></span></a></li>';
+					tabHtml = '<li role="presentation" ><a class="user-chat-item" id="' + activeChats[i].username + '"href="#"><span class="glyphicon glyphicon glyphicon-envelope mail-read" id="' + activeChats[i].username + '-mail"></span> ' + activeChats[i].username + ' <span class="glyphicon glyphicon glyphicon-remove"></span></a></li>';
 				}
 				$('#userChatBar').append(tabHtml);
 			}
@@ -201,6 +202,34 @@ function addMessage(messageData) {
 		$("#chatEntries").append('<div class="'+classDiv+'"><p class="infos"><span class="pseudo">'+messageData.pseudo+'</span>, <time class="date" title="'+messageData.date+'">'+messageData.date+'</time></p><p>' + messageData.msg + '</p></div>');
 		time();		
 		$("#chatEntries").slimScroll({ scrollTo: $("#chatEntries")[0].scrollHeight +'px'})
+		if (messageData.save) { msgStoreSave(messageData, $('#chatTitle').text()); }
+	}
+	else {
+		//check if sender is an activechat if not add to list and save message store
+		//[{"username":"chat 7","unread":0}]
+		var currentActiveChats = sessionStorage.activeChats;
+		if (typeof currentActiveChats === 'undefined') { 
+			currentActiveChats = []; 
+		}
+		else {
+			currentActiveChats = JSON.parse(currentActiveChats);
+		}
+		//usersArray.find(x=> x.username ==='Jason').uuid
+		var result = currentActiveChats.findIndex(x=> x.username === messageData.pseudo);
+		if (result == -1) {
+			//chat does not exists add to store
+			//add user to active chat
+			currentActiveChats.unshift({username: messageData.pseudo, unread:true});
+			messageData.read = true;
+			msgStoreSave(messageData, 'Chatting with ' + messageData.pseudo);
+		}
+		else {
+			msgStoreSave(messageData, 'Chatting with ' + messageData.pseudo);
+			messageData.read = true;
+			currentActiveChats[result].unread = true;
+		}
+		sessionStorage.activeChats = JSON.stringify(currentActiveChats);
+		
 	}
 	//mark message waiting
 	messageData.read = true;
@@ -209,7 +238,7 @@ function addMessage(messageData) {
 	//save message to storage
 	//get room name
 	//span#chatTitle GlobalChat
-	if (messageData.save) { msgStoreSave(messageData, $('#chatTitle').text()); }
+	
 }
 
 function bindButton() {
@@ -223,7 +252,6 @@ function bindButton() {
 //User login
 function setPseudo() {
 	var uuidStorage = sessionStorage['UUID'];
-	sessionStorage.clear();
 	sessionStorage['UUID'] = uuidStorage;
 	//clear chat window
 	//get varibles from form
@@ -329,7 +357,7 @@ function loadUser(username) {
 	var result = currentActiveChats.findIndex(x=> x.username === username)
 	if (result == -1) {
 		//has not been added add to front of list.
-		currentActiveChats.unshift({username: username, unread:0});
+		currentActiveChats.unshift({username: username, unread:false});
 	}
 	else {
 		//place back at front of list
@@ -401,7 +429,6 @@ function clearChat() {
 function checkUUID() {
 	if (typeof sessionStorage['UUID'] === 'undefined') {
 		//no uuid in session storage generate one
-		sessionStorage.clear();
 		sessionStorage['UUID'] = uuid();
 	}
 	else {
@@ -423,6 +450,7 @@ function checkUUID() {
 			}
 			else
 			{
+				sessionStorage.clear();
 				sessionStorage['UUID'] = uuid();
 				if (location.pathname == '/' ) {
 					$('#modalPseudo').modal('show');

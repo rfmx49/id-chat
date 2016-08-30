@@ -33,10 +33,6 @@
   	border-radius:10px;
 }
 
-.alert-error {
-	color = 'red';
-}
-
 /* message sent */
 .self {
 	background: #ADF6D7; /* Old browsers */
@@ -74,4 +70,12 @@
 .nav-tabs>li {
 	float: none;
 }
-	 
+
+/*chat mail status*/
+.mail-read {
+	color: #808080;
+}
+
+.mail-unread {
+	color: #ff3333;
+}
