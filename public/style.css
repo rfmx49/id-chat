@@ -52,11 +52,20 @@
 .chatInput {
 	width: 66%;
 	margin-left: 5%;
-	margin-left: 5%;
 }
 
-#entries {
-	margin-top: 10px;
+#middlePanel {
+	margin-top: 1px;
+	padding-left: 0;
+}
+
+#sidePanel {
+	margin-top: 1px;
+	padding-right: 0;
+}
+
+#chatEntriesPanel {
+	margin: 1px;
 }
 
 /*for scrollable tabs*/

@@ -46,12 +46,6 @@ app.use(express.static(__dirname + '/public'));
 app.get('/', function(req, res){
   res.render('home.pug');
 });
-app.get('/chat', function(req, res){
-  res.render('chat.pug');
-});
-app.get('/users', function(req, res){
-  res.render('users.pug');
-});
 
 server.listen(appPort);
 // app.listen(appPort);
@@ -248,7 +242,7 @@ function sendPrivateMessage(data, socket) {
 		console.log("UserName found = " + JSON.stringify(docs[0]));
 		console.log("Data post 2: " + JSON.stringify(data));
 		if (docs.length == 0) {
-			console.log("PM to unidentified user " + uuid);
+			console.log("PM to unidentified user " + data.uuid);
 			socket.emit('pmStatus', 'user-not-exist');
 			return;
 		}
@@ -291,8 +285,8 @@ function getUserAccountByUUID(uuid) {
 function getUsers(qty, socket) {
 	//var result = db.users.find({"uuid": {$exists: true}}, {username: 1, age: 1, sex: 1}, function (err, docs) {
 	var result = db.users.find({"uuid": {$exists: true}}, {username: 1, age: 1, sex: 1, _id: 0}).sort({lastactive: 1}).exec(function (err, docs) {	
-		console.log("Doc = " + JSON.stringify(docs));
-		console.log("err = " + err);
+		//console.log("Doc = " + JSON.stringify(docs));
+		//console.log("err = " + err);
 		console.log("test = " + socket.id);
 		socket.emit('userListAnswer', docs);
 	});

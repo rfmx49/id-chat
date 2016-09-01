@@ -9,14 +9,65 @@ $(function() {
 	checkUUID();
 	window.setInterval(time, 1000*10);
 	//Click handlers
-	$("#navHome").click(function() {navHome()});
-	$("#navInbox").click(function() {navInbox()});
-	$("#navChat").click(function() {navChat()});
+	//on tab load
+	$('.nav-tabs a').on('shown.bs.tab', function(event) {
+		//$(event.target).text(); //target tab
+		onPageLoad($(event.target).text());
+	});
+	//on tab close
+	$('.nav-tabs a').on('hidden.bs.tab', function(event) {
+		onPageClose($(event.target).text());
+	});
 	submitButton.click(function() {sentMessage();});
 	$('#messageInput').keypress(function (e) {
 	if (e.which == 13) {sentMessage();}});
 	$('body').on('click', 'a.user-list-item', function() {
 		loadUser($(this.children[0]).text());
+	});
+
+	//chat tab handlers
+	$('body').on('click', 'a.user-chat-item', function() {
+		console.log(this.text);
+		$("#chatEntries").html("");
+		var chatTitle = $.trim(this.text);
+		if (chatTitle == 'Global Chat') {
+			$("#chatTitle").text(chatTitle);
+			msgStoreRestore(chatTitle);
+		}
+		else {
+			$("#chatTitle").text('Chatting with ' + chatTitle);
+			msgStoreRestore('Chatting with ' + chatTitle);
+		}
+		sessionStorage.lastActiveChat = chatTitle;
+		$(this.parentElement).addClass('active').siblings().removeClass('active');
+	});
+	//close tab
+	$('body').on('click', 'span.glyphicon-remove', function(event) {
+		event.stopPropagation();
+		var chatName = $($('span.glyphicon-remove')[0].closest('a')).text();
+		//remove name from active chat list
+		var currentActiveChats = sessionStorage.activeChats;
+		currentActiveChats = JSON.parse(currentActiveChats);
+		var currentChat = currentActiveChats.findIndex(x=> x.username === chatName);
+		currentActiveChats.splice(currentChat,1);
+		sessionStorage.activeChats = JSON.stringify(currentActiveChats);
+		$($(this)[0].closest('li')).remove();
+		//what to do when closing active tab...
+		//go to nearest tab
+		var lastActiveChat = sessionStorage.lastActiveChat;
+		if (lastActiveChat == chatName) {
+			//remove the chat choose a different last active from current chats list or pick global if none availible
+			if (currentActiveChats.length == 0) {
+				//set global chat as last active
+				sessionStorage.lastActiveChat = 'Global Chat';
+			}
+			else {
+				//set next active chat as last active
+				//sessionStorage.lastActiveChat = currentActiveChats[0].name;
+			}
+		}
+		//go to closed tab list when no other tabs availible.
+		//TODO add tab to closed tabs list
 	});
 	/*$('body').on('click', 'select#pseudoAgeInput', function() {
 		console.log('Age List Clicked');
@@ -38,93 +89,53 @@ $(function() {
 		//set button functions
 	} 
 	$("#pseudoSubmit").click(function() {setPseudo()});
-	onPageLoad();	
+	onPageLoad('Chat');	
 });
-
-//PAGE handling
-function onPageLoad() {
-	//get page name
-	var pageName = $('#chatTitle').text();
-	//check if this is system page
-	if (pageName == 'GlobalChat') {
-		$("#alertPseudo").hide();
-		$("#alertPseudoBlank").hide();
-		$("#alertPseudoLong").hide();
-		$("#alertPseudoCountry").hide();
-		$("#alertPseudoRegion").hide();
-	}
-	if (pageName.indexOf("Chat") != -1) {
-		msgStoreRestore(pageName);
-	}
-	else if (pageName == "User List") {
-		//generate user list
-		getNetworkUsers();
-		$(".user-list-item").click(function() {loadUser(this)});
-	}
-	else if (pageName == "Private") {
-		//private chat window
-		//load all chat tabs and display the most recent
-		$('body').on('click', 'a.user-chat-item', function() {
-			console.log(this.text);
-			$("#chatEntries").html("");
-			var chatTitle = $.trim(this.text)
-			$("#chatTitle").text('Chatting with ' + chatTitle);
-			msgStoreRestore('Chatting with ' + chatTitle);
-			sessionStorage.lastActiveChat = chatTitle;
-			$(this.parentElement).addClass('active').siblings().removeClass('active');
-		});
-		//close tab
-		$('body').on('click', 'span.glyphicon-remove', function(event) {
-			event.stopPropagation();
-			var chatName = $($('span.glyphicon-remove')[0].closest('a')).text();
-			//remove name from active chat list
-			var currentActiveChats = sessionStorage.activeChats;
-			currentActiveChats = JSON.parse(currentActiveChats);
-			var currentChat = currentActiveChats.findIndex(x=> x.username === chatName);
-			currentActiveChats.splice(currentChat,1);
-			sessionStorage.activeChats = JSON.stringify(currentActiveChats);
-			$($(this)[0].closest('li')).remove();
-			//what to do when closing active tab...
-			//go to nearest tab
-			//go to closed tab list when no other tabs availible.
-			//TODO add tab to closed tabs list
-		});
-		var activeChats = sessionStorage.activeChats;
-		if (typeof activeChats === 'undefined') {
-			location.href = 'users';
-			return;
-		}
-		else {
-			activeChats = JSON.parse(activeChats);
-			var tabHtml;
-			var lastActive = sessionStorage.lastActiveChat;
-			for (var i=0;i < activeChats.length; i++) {
-				//create tabs
-				if (activeChats[i].username == lastActive) {
-					tabHtml = '<li role="presentation" class="active"><a class="user-chat-item" id="' + activeChats[i].username + '"href="#"><span class="glyphicon glyphicon glyphicon-envelope mail-read" id="' + activeChats[i].username + '-mail"></span> ' + activeChats[i].username + ' <span class="glyphicon glyphicon glyphicon-remove"></span></a></li>';
-					$("#chatTitle").text('Chatting with ' + activeChats[i].username);
-					msgStoreRestore('Chatting with ' + activeChats[i].username);
-				}
-				else {
-					tabHtml = '<li role="presentation" ><a class="user-chat-item" id="' + activeChats[i].username + '"href="#"><span class="glyphicon glyphicon glyphicon-envelope mail-read" id="' + activeChats[i].username + '-mail"></span> ' + activeChats[i].username + ' <span class="glyphicon glyphicon glyphicon-remove"></span></a></li>';
-				}
-				$('#userChatBar').append(tabHtml);
-			}
-			//go to active tab
-		}
-	}
-}
 
 //Socket.io
 var socket = io.connect();
+
+//socket messages
 socket.on('connect', function() {
 	console.log('connected');
 });
 socket.on('nbUsers', function(msg) {
 	$("#nbUsers").html(msg.nb);
 });
-socket.on('pseudoStatus', function(msg) {
-	console.log("User Status " + msg);
+socket.on('pseudoStatus', function(data) {
+	console.log("User Status " + data);
+	if(data == "ok")
+		{
+			$('#modalPseudo').modal('hide');
+			setPseudoHideAlerts();
+			pseudo = $("#pseudoInput").val();
+		}
+		else
+		{
+			$("#alertPseudo").slideDown();
+		}
+});
+//attepmt login with uuid
+socket.on('loginStatus', function(data){
+	if(data != "failed")
+	{
+		$('#modalPseudo').modal('hide');
+		$("#alertPseudo").hide();
+		pseudo = data.username;
+		sessionStorage['username'] = data.username;
+		console.log(data);
+	}
+	else
+	{
+		sessionStorage.clear();
+		sessionStorage['UUID'] = uuid();
+		if (location.pathname == '/' ) {
+			$('#modalPseudo').modal('show');
+		}
+		else {
+			location.href = '/';
+		}
+	}
 });
 //for global messages
 socket.on('message', function(data) {
@@ -153,6 +164,84 @@ socket.on('messagePrivate', function(data) {
 		addMessage({msg: data.message, pseudo: data.pseudo, date: new Date().toISOString(), self:false, save: true, read: false});
 	}
 });
+//Messagestatus
+socket.on('messagePrivateStatus', function(data) {
+	console.log("Message Status " + data);
+});
+//retrieve users list
+socket.on('userListAnswer', function(data){
+	console.log(data);
+	var displayRow = [];
+	for (var i = 0; i < data.length; i++) {
+		console.log("Displaying user " + i + ": " + data[i].username);
+		if (i !=0 && ((i+1)%3 == 0 || i+1 == data.length)) {
+			displayRow.push(data[i]);
+			displayUser(displayRow);
+			displayRow = [];
+		}
+		else {
+			displayRow.push(data[i]);
+		}
+	}
+});
+
+//PAGE handling
+function onPageLoad(pageName) {
+	//check if this is system page
+	if (pageName == 'Chat') {
+		$("#alertPseudo").hide();
+		setPseudoHideAlerts();
+		//load chat tabs
+		//private chat window
+		//load all chat tabs and display the most recent		
+		var activeChats = sessionStorage.activeChats;
+		if (typeof activeChats === 'undefined') {
+			//no active chats Global chat will remian active
+			return;
+		}
+		else {
+			activeChats = JSON.parse(activeChats);
+			var tabHtml;
+			var lastActive = sessionStorage.lastActiveChat;
+			for (var i=0;i < activeChats.length; i++) {
+				//create tabs
+				if (activeChats[i].username == lastActive) {
+					tabHtml = '<li role="presentation" class="active"><a class="user-chat-item" id="' + activeChats[i].username + '"href="#"><span class="glyphicon glyphicon glyphicon-envelope mail-read" id="' + activeChats[i].username + '-mail"></span> ' + activeChats[i].username + ' <span class="glyphicon glyphicon glyphicon-remove"></span></a></li>';
+					$("#chatTitle").text('Chatting with ' + activeChats[i].username);
+					msgStoreRestore('Chatting with ' + activeChats[i].username);
+				}
+				else {
+					tabHtml = '<li role="presentation" ><a class="user-chat-item" id="' + activeChats[i].username + '"href="#"><span class="glyphicon glyphicon glyphicon-envelope mail-read" id="' + activeChats[i].username + '-mail"></span> ' + activeChats[i].username + ' <span class="glyphicon glyphicon glyphicon-remove"></span></a></li>';
+				}
+				$('#userChatBar').append(tabHtml);
+			}
+			//go to active tab
+		}
+		//get chat name
+		var chatName = $('#chatTitle').text();
+		if (chatName == 'Global Chat') {
+			msgStoreRestore(chatName);
+		}
+	}
+	else if (pageName == "Users") {
+		//generate user list
+		setHeightUsers();
+		getNetworkUsers();
+		$(".user-list-item").click(function() {loadUser(this)});
+	}
+	else if (pageName == "Private") {
+		
+	}
+}
+
+function onPageClose(pageName) {
+	if (pageName == 'Chat') {
+		clearChat();
+		//clear tab bar
+		var defualtChatBar = '<li role="presentation"><a class="user-chat-item">Global Chat</a></li>';
+		$('#userChatBar').html(defualtChatBar);
+	}
+}
 
 //Help functions
 function sentMessage() {
@@ -173,7 +262,7 @@ function sentMessage() {
 			//check if this is a private message
 			//get chattitle
 			var chatTitle = $('#chatTitle').text().replace('Chatting with ','');
-			var messagePM = {uuid: sessoinStorage['UUID'], recpiant: chatTitle, message : messageContainer.val()};
+			var messagePM = {uuid: sessionStorage['UUID'], recpiant: chatTitle, message : messageContainer.val()};
 			if (chatTitle == 'GlobalChat') {
 				socket.emit('message', messagePM);
 				addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true});
@@ -186,11 +275,6 @@ function sentMessage() {
 				addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true});
 				messageContainer.val('');
 				submitButton.button('loading');
-				//check for server reply
-				
-				socket.on('messagePrivateStatus', function(msg) {
-					console.log("User Status " + msg);
-				});
 			}
 			
 		}
@@ -294,18 +378,6 @@ function setPseudo() {
 
 	//region selected
 	socket.emit('setPseudo', userData);
-	socket.on('pseudoStatus', function(data){
-		if(data == "ok")
-		{
-			$('#modalPseudo').modal('hide');
-			setPseudoHideAlerts();
-			pseudo = $("#pseudoInput").val();
-		}
-		else
-		{
-			$("#alertPseudo").slideDown();
-		}
-	})
 }
 
 function setPseudoHideAlerts() {
@@ -318,24 +390,8 @@ function setPseudoHideAlerts() {
 
 function getNetworkUsers(page) {
 	var currentPage = 1;
-	$("#chatEntries").html("");
+	$("#usersListLarge").html("");
 	socket.emit('retrieveUserList', currentPage);
-
-	socket.on('userListAnswer', function(data){
-			console.log(data);
-			var displayRow = [];
-			for (var i = 0; i < data.length; i++) {
-				console.log("Displaying user " + i + ": " + data[i].username);
-				if (i !=0 && ((i+1)%3 == 0 || i+1 == data.length)) {
-					displayRow.push(data[i]);
-					displayUser(displayRow);
-					displayRow = [];
-				}
-				else {
-					displayRow.push(data[i]);
-				}
-			}
-		})
 }
 
 function displayUser(userData) {
@@ -345,7 +401,7 @@ function displayUser(userData) {
 		userRowHtml = userRowHtml + '<div class="col-md-4"><a href="#" class="list-group-item user-list-item"><h4 class="list-group-item-heading">' + userData[i].username + '</h4><p class="list-group-item-text">' + userData[i].age + userData[i].sex +'</p></a></div>'
 	}
 	userRowHtml = userRowHtml + '</div>';
-	$('#chatEntries').append(userRowHtml);
+	$('#usersListLarge').append(userRowHtml);
 }
 
 function loadUser(username) {
@@ -373,7 +429,8 @@ function loadUser(username) {
 	sessionStorage.activeChats = JSON.stringify(currentActiveChats);
 	sessionStorage.lastActiveChat = username;
 	//load chat window
-	location.href = 'chat';
+	//location.href = 'chat';
+	$('.nav-tabs a[href="#homeAnchor"]').tab('show');
 }
 
 //Message Storage/restore
@@ -407,22 +464,6 @@ function msgStoreRestore(room) {
 
 //navigation
 
-function navHome() {
-	sessionStorage.lastActiveChat = 'GlobalChat';
-	console.log('Clicked Home');
-}
-
-function navInbox() {
-	console.log('Clicked Inbox');
-}
-
-function navChat() {
-	console.log('Clicked Chat');
-}
-
-function navUsers() {
-	console.log('Clicked Users');
-}
 
 //clear chat window
 
@@ -444,27 +485,6 @@ function checkUUID() {
 		}
 		//attempt login with server
 		socket.emit('uuidLogin', sessionStorage['UUID']);
-		socket.on('loginStatus', function(data){
-			if(data != "failed")
-			{
-				$('#modalPseudo').modal('hide');
-				$("#alertPseudo").hide();
-				pseudo = data.username;
-				sessionStorage['username'] = data.username;
-				console.log(data);
-			}
-			else
-			{
-				sessionStorage.clear();
-				sessionStorage['UUID'] = uuid();
-				if (location.pathname == '/' ) {
-					$('#modalPseudo').modal('show');
-				}
-				else {
-					location.href = '/';
-				}
-			}
-		})
 	}
 }
 
@@ -504,9 +524,21 @@ function time() {
 	});
 }
 function setHeight() {
-	var slimHeight;
-	slimHeight = $(window).height() *.50;
+	var slimHeight = $(window).height() * .6;
 	$("#chatEntries").height(slimHeight);
+	$("#chatEntries").height()-($(document).height()-$(window).height())
 	$("#chatEntries").slimScroll({height: 'auto', start: 'bottom'});
+	
+	$("#userEntries").height($($('#chatEntries').parent()).height() + $('#entries').height());
+	$("#userEntries").slimScroll({height: 'auto', start: 'top'});
 	//$(".slimScrollDiv").height('auto');
+}
+function setHeightUsers() {
+	if (($("#usersListLarge").parent()).attr('class') != 'slimScrollDiv') {
+		var slimHeight = $(window).height() * .7;
+		$("#usersListLarge").height(slimHeight);
+		$("#usersListLarge").height()-($(document).height()-$(window).height())
+		$("#usersListLarge").slimScroll({height: 'auto', start: 'bottom'});
+		//$(".slimScrollDiv").height('auto');
+	}
 }

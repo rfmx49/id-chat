@@ -14,34 +14,73 @@ html
 		script(src="script.js")
 	body
 		div.container-fluid#main
-			ul(class="nav nav-tabs")
+			ul#mainNav(class="nav nav-tabs")
 				li(role="presentation" class="active")
-					a#navHome(href="/") Home
+					a#navHome(href="#homeAnchor" data-toggle="tab") Chat
 				li(role="presentation")
-					a#navChat(href="/chat") Chat
+					a#navUsers(href="#usersAnchor" data-toggle="tab") Users
 				li(role="presentation")
-					a#navUsers(href="/users") Users
+					a#navInbox(href="#inboxAnchor" data-toggle="tab") Inbox
 				li(role="presentation")
-					a#navInbox(href="#") Inbox
+					a#navSearch(href="#searchAnchor" data-toggle="tab") Search
 				li(role="presentation")
-					a#navSearch(href="#") Search
-				li(role="presentation")
-					a#navProfile(href="#") Profile
+					a#navProfile(href="#profileAnchor" data-toggle="tab") Profile
 			div#mainContent.tab-content
-				div#chatEntriesPanel(class="panel panel-primary ")
-					div(class="panel-heading")
-						h3
-							span#chatTitle GlobalChat
-					div(class="panel-body")
-						div#chatEntries
-						div.row#entries
-							input(type='text')#messageInput.chatInput
-							div.btn-group
-								button.btn#submit(data-loading-text="Send") Send					
-				div#nbUsersDiv
-					p There is 
-						span#nbUsers
-						|  connected user(s).
+				div#homeAnchor(class="tab-pane fade in active")
+					ul#userChatBar(class="nav nav-tabs")
+						li(role="presentation")
+							a(href="#" class="user-chat-item") Global Chat
+					div.row
+						div.col-md-3#sidePanel
+							div#sidePanelEntries(class="panel panel-primary full-height")
+								div(class="panel-heading")
+									h4
+										span#sideTitle Users
+								div(class="panel-body")
+									div#userEntries
+								
+						div.col-md-9#middlePanel
+							div#chatEntriesPanel(class="panel panel-primary tightPanel")
+								div(class="panel-heading")
+									h4
+										span#chatTitle Global Chat
+								div(class="panel-body")
+									div#chatEntries
+									div.row#entries
+										input(type='text')#messageInput.chatInput
+										div.btn-group
+											button.btn#submit(data-loading-text="Send") Send					
+					div#nbUsersDiv
+						p There is 
+							span#nbUsers
+							|  connected user(s).
+				div#usersAnchor(class="tab-pane fade")
+					div.tab-content
+						div#userPanel(class="panel panel-primary")
+							div(class="panel-heading")
+								h4
+									span Users
+							div(class="panel-body")
+									div#usersListLarge
+				div#inboxAnchor(class="tab-pane fade")
+					div.tab-content
+						div#inboxPanel(class="panel panel-primary")
+							div(class="panel-heading")
+								h4
+									span Inbox
+				div#searchAnchor(class="tab-pane fade")
+					div.tab-content
+						div#searchPanel(class="panel panel-primary")
+							div(class="panel-heading")
+								h4
+									span Search
+				div#profileAnchor(class="tab-pane fade")
+					div.tab-content
+						div#profilePanel(class="panel panel-primary")
+							div(class="panel-heading")
+								h4
+									span Profile
+									
 	div.modal.fade#modalPseudo(role="dialog")
 		div.modal-dialog
 			div.modal-content
