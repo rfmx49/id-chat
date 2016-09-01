@@ -89,7 +89,12 @@ $(function() {
 		//set button functions
 	} 
 	$("#pseudoSubmit").click(function() {setPseudo()});
-	onPageLoad('Chat');	
+	onPageLoad('Chat');
+	//setup messageTracking storage
+	var messageTracker = sessionStorage.messageTracker;
+	if (typeof messageTracker === 'undefined') {
+		sessionStorage.messageTracker = JSON.stringify([]);
+	}
 });
 
 //Socket.io
@@ -163,10 +168,12 @@ socket.on('messagePrivate', function(data) {
 		//save message for later.
 		addMessage({msg: data.message, pseudo: data.pseudo, date: new Date().toISOString(), self:false, save: true, read: false});
 	}
+	//let server know message was received
+	socket.emit('messageStatusUpdate', {muid: data.muid, status: 3});
 });
 //Messagestatus
-socket.on('messagePrivateStatus', function(data) {
-	console.log("Message Status " + data);
+socket.on('messageStatus', function(data) {
+	messageTrackingUpdate(data.muid, data.status);
 });
 //retrieve users list
 socket.on('userListAnswer', function(data){
@@ -262,24 +269,25 @@ function sentMessage() {
 			//check if this is a private message
 			//get chattitle
 			var chatTitle = $('#chatTitle').text().replace('Chatting with ','');
-			var messagePM = {uuid: sessionStorage['UUID'], recpiant: chatTitle, message : messageContainer.val()};
-			if (chatTitle == 'GlobalChat') {
+			var messagePM = {uuid: sessionStorage['UUID'], recpiant: chatTitle, message : messageContainer.val(), muid: msgUID()};
+			if (chatTitle == 'Global Chat') {
 				socket.emit('message', messagePM);
-				addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true});
+				addMessage({msg: messagePM.message, pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true, muid: messagePM.muid});
 				messageContainer.val('');
 				submitButton.button('loading');
 				//check for server reply
 			}
-			else {				
+			else {
 				socket.emit('messagePrivate', messagePM);
-				addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true});
+				addMessage({msg: messagePM.message, pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true, muid: messagePM.muid});
 				messageContainer.val('');
 				submitButton.button('loading');
 			}
-			
+			//add message to tracker.
 		}
 	}
 }
+
 function addMessage(messageData) {
 	if	(messageData.self) {
 		var classDiv = "row message self";
@@ -328,6 +336,50 @@ function addMessage(messageData) {
 	//get room name
 	//span#chatTitle GlobalChat
 	
+}
+
+function messageTrackingUpdate(muid, status) {	
+	if (status == 1) {
+		//add message to tracker.
+		var messageTracker = JSON.parse(sessionStorage.messageTracker);
+		messageTracker.push({id: messagePM.muid, status:1});
+		sessionStorage.messageTracker = JSON.stringify(messageTracker);
+	}
+	else if (status == 2) {
+		//private message received from server
+		messageTrackingUpdateStatus(muid, status, false)
+	}
+	else if (status == 4) {	
+		//private message received by server and recipiant
+		messageTrackingUpdateStatus(muid, status, true)
+	}
+	else if (status == 5) {
+		//global message recieved by server
+		messageTrackingUpdateStatus(muid, status, true)
+	}
+	
+	
+}
+
+function messageTrackingUpdateStatus(muid, newStatus, removeMsg) {
+	var messageTracker = JSON.parse(sessionStorage.messageTracker);
+	//DEBUG TODO
+	removeMsg = false;
+	var result = messageTracker.findIndex(x=> x.muid === muid);
+	if (result == -1) {
+		console.log('messag enot found');
+		return;
+	}
+	else {
+		if (removeMsg) {
+			messageTracker.splice(result,1)
+		}
+		else {
+			messageTracker[result].status = newStatus;
+		}
+	}
+	
+	sessionStorage.messageTracker = JSON.stringify(messageTracker);
 }
 
 function bindButton() {
@@ -515,7 +567,7 @@ function msgUID() {
         }
     }
     var crypto = window.crypto || window.msCrypto;
-    return 'Mxxxx-xxxx'.replace(/x/g, randomDigit);
+    return 'Mxxxx-xxxx-xxxxxxxxxxxx'.replace(/x/g, randomDigit);
 }
 
 function time() {

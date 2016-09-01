@@ -33,6 +33,8 @@ function userObj(data) {
 	this.lastactive = new Date().toISOString();
 }
 
+var messageTracker = [];
+
 // Views Options
 
 app.set('views', __dirname + '/views');
@@ -60,9 +62,10 @@ io.sockets.on('connection', function (socket) { // First connection
 	reloadUsers(); // Send the count to all the users
 	socket.on('message', function (data) { // Broadcast the message to all
 		if(pseudoSet(socket)){
-			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message};
+			var transmit = {date: new Date().toISOString(), pseudo: socket.nickname, message: data.message};
 			socket.broadcast.emit('message', transmit);
-			console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
+			messageTrackingUpdate(data.muid, 5, socket);
+			console.log("user "+ transmit['pseudo'] + " said " + data.message);
 		}
 		else {
 			console.log("User not logged in");
@@ -76,6 +79,12 @@ io.sockets.on('connection', function (socket) { // First connection
 		}
 		else {
 			sendPrivateMessageUuid(data, socket);
+		}
+	});
+	socket.on('messageStatusUpdate', function (data) { // Broadcast the message to one
+		//status should only equal 3
+		if (data.status == 3) {
+			messageTrackingUpdate(data.muid, data.status, socket);
 		}
 	});
 	socket.on('setPseudo', function (data) { // Assign a name to the user
@@ -199,7 +208,8 @@ function sendGlobalMessageUuid(data, socket) {
 			//send message
 			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message};
 			socket.broadcast.emit('message', transmit);
-			console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
+			messageTrackingUpdate(data.muid, 5, socket);
+			console.log("user "+ transmit['pseudo'] + " said " + data.message);
 		}
 	});
 }
@@ -225,12 +235,12 @@ function sendPrivateMessageUuid(data, socket) {
 			socket.emit('pseudoStatus', 'ok');
 			socket.emit('loginStatus', logonUser);
 			//send message
-			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message};
+			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message, muid: data.muid};
 			//send message to recipiant
 			socket.broadcast.to(docs[0].userid).emit('messagePrivate', transmit);
 			//send acknoledgement to sender
-			socket.emit('messagePrivateStatus', 1);
-			console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
+			messageTrackingUpdate(data.muid, 2, socket, data.uuid);
+			console.log("user "+ transmit['pseudo'] + " said " + data.message);
 		}
 	});
 }
@@ -249,13 +259,54 @@ function sendPrivateMessage(data, socket) {
 		else {
 			/*console.log("PM received for " + data.recpiant + " found the following user " + docs[0].username);
 			console.log("the message is " + data.message + " to " + docs[0].userid + " from " + socket.nickname);*/
-			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message};
+			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message, muid: data.muid};
 			//send message to recipiant
 			socket.broadcast.to(docs[0].userid).emit('messagePrivate', transmit);
 			//send acknoledgement to sender
-			socket.emit('messagePrivateStatus', 1);
+			messageTrackingUpdate(data.muid, 2, socket, data.uuid);
 		}			
 	});
+}
+
+function messageTrackingUpdate(muid, status, socket, uuid) {
+	//push msgid info to array
+	console.log("Status update to be sent for " + muid + " status: " + status); 
+	if (status == 2) {
+		//private message received by server from original sender
+		messageTracker.push({muid: muid, status: status, uuid: uuid});
+		socket.emit('messageStatus', {muid: muid, status: 2});
+		console.log('socket fired 2');
+	}
+	else if  (status == 5) {
+		//global message recived by server
+		socket.emit('messageStatus', {muid: muid, status: 5});
+		console.log('socket fired 5');
+	}
+	else if  (status == 3) {
+		//private message received by recipiant notify original sender
+		var muidIndex = messageTracker.findIndex(x=> x.muid == muid);
+		//need to get original senders socket
+		if (muidIndex != -1) {
+			//to global function
+			uuid = messageTracker[muidIndex].uuid;
+			var result = db.users.find({"uuid": uuid}, function (err, docs) {
+				console.log("Original Sender = " + JSON.stringify(docs));
+				console.log("err = " + err);
+				//need to remove message id from array
+				socket.broadcast.to(docs[0].userid).emit('messageStatus', {muid: muid, status: 4});
+				messageTracker.splice(muidIndex,1);
+				console.log('socket fired 4, removed msg ' + muidIndex + ' from index');		
+			});
+		}
+		else {
+			console.log("muid " + muid + " is missing");
+			return;
+		}
+	}
+	else {
+		socket.emit('messageStatus', {muid: muid, status: status});
+		console.log('socket fired 6');
+	}
 }
 
 function reloadUsers() { // Send the count of the users to all
