@@ -173,19 +173,24 @@ function sentMessage() {
 			//check if this is a private message
 			//get chattitle
 			var chatTitle = $('#chatTitle').text().replace('Chatting with ','');
+			var messagePM = {uuid: sessoinStorage['UUID'], recpiant: chatTitle, message : messageContainer.val()};
 			if (chatTitle == 'GlobalChat') {
-				socket.emit('message', messageContainer.val());
+				socket.emit('message', messagePM);
 				addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true});
 				messageContainer.val('');
 				submitButton.button('loading');
+				//check for server reply
 			}
-			else {
-				var messagePM = {recpiant: chatTitle, message : messageContainer.val()};
-				
+			else {				
 				socket.emit('messagePrivate', messagePM);
 				addMessage({msg: messageContainer.val(), pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true});
 				messageContainer.val('');
 				submitButton.button('loading');
+				//check for server reply
+				
+				socket.on('messagePrivateStatus', function(msg) {
+					console.log("User Status " + msg);
+				});
 			}
 			
 		}
@@ -476,6 +481,21 @@ function uuid() {
     }
     var crypto = window.crypto || window.msCrypto;
     return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, randomDigit);
+}
+
+//genereate a messageID
+function msgUID() {
+    function randomDigit() {
+        if (crypto && crypto.getRandomValues) {
+            var rands = new Uint8Array(1);
+            crypto.getRandomValues(rands);
+            return (rands[0] % 16).toString(16);
+        } else {
+            return ((Math.random() * 16) | 0).toString(16);
+        }
+    }
+    var crypto = window.crypto || window.msCrypto;
+    return 'Mxxxx-xxxx'.replace(/x/g, randomDigit);
 }
 
 function time() {

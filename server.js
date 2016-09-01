@@ -65,18 +65,24 @@ io.sockets.on('connection', function (socket) { // First connection
 	users += 1; // Add 1 to the count
 	reloadUsers(); // Send the count to all the users
 	socket.on('message', function (data) { // Broadcast the message to all
-		if(pseudoSet(socket))
-		{
-			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data};
+		if(pseudoSet(socket)){
+			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message};
 			socket.broadcast.emit('message', transmit);
 			console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
 		}
 		else {
 			console.log("User not logged in");
+			sendGlobalMessageUuid(data, socket);
+			
 		}
 	});
 	socket.on('messagePrivate', function (data) { // Broadcast the message to one
-		sendPrivateMessage(data, socket);
+		if(pseudoSet(socket)) {
+			sendPrivateMessage(data, socket);
+		}
+		else {
+			sendPrivateMessageUuid(data, socket);
+		}
 	});
 	socket.on('setPseudo', function (data) { // Assign a name to the user
 		//if (pseudoArray.indexOf(data.username) == -1) // Test if the name is already taken
@@ -147,7 +153,7 @@ io.sockets.on('connection', function (socket) { // First connection
 			}
 			else {
 				console.log("User found");
-				logonUser = docs[0];
+				var logonUser = docs[0];
 				console.log(logonUser);		
 				logonUser.userid = socket.id;
 				socket.nickname = logonUser.username;
@@ -176,6 +182,65 @@ io.sockets.on('connection', function (socket) { // First connection
 	});
 });
 
+function sendGlobalMessageUuid(data, socket) {
+	//check if uuid is active
+	var uuidSender = db.users.find({"uuid": data.uuid}, function (err, docs) {
+		console.log("UUID Found = " + JSON.stringify(docs));
+		console.log(docs.length);
+		if (docs.length == 0) {
+			console.log("false uuid " + data.uuid);
+			socket.emit('loginStatus', 'failed');
+			return;
+		}
+		else {
+			console.log("User found");
+			var logonUser = docs[0];
+			console.log(logonUser);		
+			logonUser.userid = socket.id;
+			socket.nickname = logonUser.username;
+			//update doc in DB
+			db.users.update({_id: logonUser._id}, logonUser,{ upsert: true }, function() {});
+			socket.emit('pseudoStatus', 'ok');
+			socket.emit('loginStatus', logonUser);
+			//send message
+			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message};
+			socket.broadcast.emit('message', transmit);
+			console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
+		}
+	});
+}
+
+function sendPrivateMessageUuid(data, socket) {
+	//check if uuid is active
+	var uuidSender = db.users.find({"uuid": data.uuid}, function (err, docs) {
+		console.log("UUID Found = " + JSON.stringify(docs));
+		console.log(docs.length);
+		if (docs.length == 0) {
+			console.log("false uuid " + data.uuid);
+			socket.emit('loginStatus', 'failed');
+			return;
+		}
+		else {
+			console.log("User found");
+			var logonUser = docs[0];
+			console.log(logonUser);		
+			logonUser.userid = socket.id;
+			socket.nickname = logonUser.username;
+			//update doc in DB
+			db.users.update({_id: logonUser._id}, logonUser,{ upsert: true }, function() {});
+			socket.emit('pseudoStatus', 'ok');
+			socket.emit('loginStatus', logonUser);
+			//send message
+			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message};
+			//send message to recipiant
+			socket.broadcast.to(docs[0].userid).emit('messagePrivate', transmit);
+			//send acknoledgement to sender
+			socket.emit('messagePrivateStatus', 1);
+			console.log("user "+ transmit['pseudo'] +" said \""+data+"\"");
+		}
+	});
+}
+
 function sendPrivateMessage(data, socket) {
 	//get user from database
 	console.log("Data post 1: " + JSON.stringify(data));
@@ -191,7 +256,10 @@ function sendPrivateMessage(data, socket) {
 			/*console.log("PM received for " + data.recpiant + " found the following user " + docs[0].username);
 			console.log("the message is " + data.message + " to " + docs[0].userid + " from " + socket.nickname);*/
 			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.message};
+			//send message to recipiant
 			socket.broadcast.to(docs[0].userid).emit('messagePrivate', transmit);
+			//send acknoledgement to sender
+			socket.emit('messagePrivateStatus', 1);
 		}			
 	});
 }
