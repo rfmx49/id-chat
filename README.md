@@ -27,6 +27,7 @@ To use it, you need Node.js.
 	--error handling in general
 	- better chat tabs with notifications.
 	- user timeout and removal on server
+	--check if user is still online.
 	-- more accurate user count.
 	- identicons
 	- group messaging

@@ -77,8 +77,11 @@ $(function() {
 		}
 		$('#pseudoAgeInput').html(ageListHtml);
 	});*/
-	
+
 	setHeight();
+	//check if mobile and change layout
+	if (mobileCheck()) { mobileLayout(); }
+	
 	if (typeof sessionStorage['username'] === 'undefined') {
 		if (location.pathname == '/' ) {
 			$('#modalPseudo').modal('show');
@@ -146,7 +149,7 @@ socket.on('loginStatus', function(data){
 socket.on('message', function(data) {
 	//are we on the global chat if not discard
 	var chatTitle = $('#chatTitle').text().replace('Chatting with ','');
-	if (chatTitle == 'GlobalChat') {
+	if (chatTitle == 'Global Chat') {
 		addMessage({msg: data.message, pseudo: data.pseudo, date: new Date().toISOString(), self:false, save: true, read: true});
 	}
 	else {
@@ -204,6 +207,7 @@ function onPageLoad(pageName) {
 		var activeChats = sessionStorage.activeChats;
 		if (typeof activeChats === 'undefined') {
 			//no active chats Global chat will remian active
+			msgStoreRestore('Global Chat');
 			return;
 		}
 		else {
@@ -272,6 +276,8 @@ function sentMessage() {
 			var messagePM = {uuid: sessionStorage['UUID'], recpiant: chatTitle, message : messageContainer.val(), muid: msgUID()};
 			if (chatTitle == 'Global Chat') {
 				socket.emit('message', messagePM);
+				//add message to tracker.
+				messageTrackingUpdate(messagePM.muid,1);	
 				addMessage({msg: messagePM.message, pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true, muid: messagePM.muid});
 				messageContainer.val('');
 				submitButton.button('loading');
@@ -279,11 +285,12 @@ function sentMessage() {
 			}
 			else {
 				socket.emit('messagePrivate', messagePM);
+				//add message to tracker.
+				messageTrackingUpdate(messagePM.muid,1);	
 				addMessage({msg: messagePM.message, pseudo: "Me", date: new Date().toISOString(), self:true, save: true,  read: true, muid: messagePM.muid});
 				messageContainer.val('');
 				submitButton.button('loading');
-			}
-			//add message to tracker.
+			}		
 		}
 	}
 }
@@ -296,7 +303,7 @@ function addMessage(messageData) {
 		var classDiv = "row message";
 	}
 	if (messageData.read) {
-		$("#chatEntries").append('<div class="'+classDiv+'"><p class="infos"><span class="pseudo">'+messageData.pseudo+'</span>, <time class="date" title="'+messageData.date+'">'+messageData.date+'</time></p><p>' + messageData.msg + '</p></div>');
+		$("#chatEntries").append('<div class="' + classDiv + '"><p class="infos"><span class="pseudo">' + messageData.pseudo + '</span>, <time class="date" title="' + messageData.date + '">' + messageData.date + '</time>  <span id="' + messageData.muid + '-status" class="glyphicon ' + getMessageStatus(messageData.muid) + '"></span></p><p>' + messageData.msg + '</p></div>');
 		time();		
 		$("#chatEntries").slimScroll({ scrollTo: $("#chatEntries")[0].scrollHeight +'px'})
 		if (messageData.save) { msgStoreSave(messageData, $('#chatTitle').text()); }
@@ -334,15 +341,14 @@ function addMessage(messageData) {
 	
 	//save message to storage
 	//get room name
-	//span#chatTitle GlobalChat
-	
+	//span#chatTitle GlobalChat 
 }
 
 function messageTrackingUpdate(muid, status) {	
 	if (status == 1) {
 		//add message to tracker.
 		var messageTracker = JSON.parse(sessionStorage.messageTracker);
-		messageTracker.push({id: messagePM.muid, status:1});
+		messageTracker.push({muid: muid, status:1});
 		sessionStorage.messageTracker = JSON.stringify(messageTracker);
 	}
 	else if (status == 2) {
@@ -356,9 +362,7 @@ function messageTrackingUpdate(muid, status) {
 	else if (status == 5) {
 		//global message recieved by server
 		messageTrackingUpdateStatus(muid, status, true)
-	}
-	
-	
+	}	
 }
 
 function messageTrackingUpdateStatus(muid, newStatus, removeMsg) {
@@ -367,7 +371,7 @@ function messageTrackingUpdateStatus(muid, newStatus, removeMsg) {
 	removeMsg = false;
 	var result = messageTracker.findIndex(x=> x.muid === muid);
 	if (result == -1) {
-		console.log('messag enot found');
+		console.log('message not found');
 		return;
 	}
 	else {
@@ -377,9 +381,39 @@ function messageTrackingUpdateStatus(muid, newStatus, removeMsg) {
 		else {
 			messageTracker[result].status = newStatus;
 		}
-	}
-	
+	}	
 	sessionStorage.messageTracker = JSON.stringify(messageTracker);
+}
+
+function getMessageStatus(muid) {
+	var messageTracker = JSON.parse(sessionStorage.messageTracker);
+	var result = messageTracker.findIndex(x=> x.muid === muid);
+	var glyph;
+	if (result == -1) {
+		glyph = "glyphicon-alert";
+		return glyph;
+	}
+	else {
+		var messageStatus = messageTracker[result].status;
+		switch(messageStatus) {
+			case 1:
+				//message sent
+				glyph = "glyphicon-transfer";
+				return glyph;
+			case 2:
+				//message received on server
+				glyph = "glyphicon-saved";
+				return glyph;
+			case 4:
+				//message received by user
+				glyph = "glyphicon-ok-sign";
+				return glyph;
+			case 5:
+				//message received on server
+				glyph = "glyphicon-saved";
+				return glyph;
+		}
+	}	
 }
 
 function bindButton() {
@@ -575,6 +609,29 @@ function time() {
 		$(this).text($.timeago($(this).attr('title')));
 	});
 }
+
+function mobileCheck() {
+	if ($('#desktopTest').is(':hidden')) {
+		//mobile device
+		return true;
+	}
+	else {
+		//return device is not small
+		return false;
+	}
+}
+
+//change mobile layout so that the sidePanel is on bottom
+function mobileLayout() {
+	//chage order
+	$('#middlePanel').insertBefore('#sidePanel');
+	//fix margins
+	$('#messageInput').css({'margin-top':'10px'});
+	$('#middlePanel').css({'padding-right':'0'});
+	$('#sidePanel').css({'padding-left':'0'});
+
+}
+
 function setHeight() {
 	var slimHeight = $(window).height() * .6;
 	$("#chatEntries").height(slimHeight);
@@ -585,6 +642,7 @@ function setHeight() {
 	$("#userEntries").slimScroll({height: 'auto', start: 'top'});
 	//$(".slimScrollDiv").height('auto');
 }
+
 function setHeightUsers() {
 	if (($("#usersListLarge").parent()).attr('class') != 'slimScrollDiv') {
 		var slimHeight = $(window).height() * .7;
