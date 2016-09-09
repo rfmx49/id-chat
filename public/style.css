@@ -88,3 +88,15 @@
 .mail-unread {
 	color: #ff3333;
 }
+
+.userTile-Male {
+	background-color: #BAD4E9;
+}
+
+.userTile-Female {
+	background-color: #E3B5CE;
+}
+
+.userTile-Couple {
+	background-color: #0066cc;
+}

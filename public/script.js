@@ -180,19 +180,7 @@ socket.on('messageStatus', function(data) {
 });
 //retrieve users list
 socket.on('userListAnswer', function(data){
-	console.log(data);
-	var displayRow = [];
-	for (var i = 0; i < data.length; i++) {
-		console.log("Displaying user " + i + ": " + data[i].username);
-		if (i !=0 && ((i+1)%3 == 0 || i+1 == data.length)) {
-			displayRow.push(data[i]);
-			displayUser(displayRow);
-			displayRow = [];
-		}
-		else {
-			displayRow.push(data[i]);
-		}
-	}
+	displayUser(data);
 });
 
 //PAGE handling
@@ -323,7 +311,6 @@ function addMessage(messageData) {
 		else {
 			currentActiveChats = JSON.parse(currentActiveChats);
 		}
-		//usersArray.find(x=> x.username ==='Jason').uuid
 		var result = currentActiveChats.findIndex(x=> x.username === messageData.pseudo);
 		if (result == -1) {
 			//chat does not exists add to store
@@ -486,13 +473,40 @@ function getNetworkUsers(page) {
 }
 
 function displayUser(userData) {
-	var userRowHtml;
-	userRowHtml = '<div class="row">';
-	for (var i = 0; i < userData.length; i++) {
-		userRowHtml = userRowHtml + '<div class="col-md-4"><a href="#" class="list-group-item user-list-item"><h4 class="list-group-item-heading">' + userData[i].username + '</h4><p class="list-group-item-text">' + userData[i].age + userData[i].sex +'</p></a></div>'
+	var pageName = $('.nav-tabs .active a').text();
+	if (pageName == 'Users') {
+		var colClass = 'col-md-4';
+		var userListElement = '#usersListLarge';
 	}
-	userRowHtml = userRowHtml + '</div>';
-	$('#usersListLarge').append(userRowHtml);
+	else {
+		var colClass = 'col-md-12';
+		var userListElement = '#userEntries';		
+	}
+	var displayRow = [];
+	var userRowHtml;
+	$(userListElement).html("");
+
+	for (var i = 0; i < userData.length; i++) {
+		console.log("Displaying user " + i + ": " + userData[i].username);
+		if (i !=0 && ((i+1)%3 == 0 || i+1 == userData.length)) {
+			displayRow.push(userData[i]);
+			userRowHtml = '<div class="row">';		
+			for (var n = 0; n < displayRow.length; n++) {
+				userRowHtml = userRowHtml + '<div class="' + colClass + '"><div class="userTile-' + displayRow[n].sex + '"><a href="#" class="list-group-item user-list-item, userTile-' + displayRow[n].sex + '"><h4 class="list-group-item-heading">' + displayRow[n].username + '</h4><p class="list-group-item-text">' + displayRow[n].age + ' ' + displayRow[n].sex +'</p></a></div></div>'
+			}
+			//, userTile-' + displayRow[n].sex + '
+			userRowHtml = userRowHtml + '</div>';
+			$(userListElement).append(userRowHtml);
+			displayRow = [];
+		}
+		else {
+			displayRow.push(userData[i]);
+		}
+	}
+
+
+	
+	
 }
 
 function loadUser(username) {
@@ -505,7 +519,6 @@ function loadUser(username) {
 	else {
 		currentActiveChats = JSON.parse(currentActiveChats);
 	}
-	//usersArray.find(x=> x.username ==='Jason').uuid
 	var result = currentActiveChats.findIndex(x=> x.username === username)
 	if (result == -1) {
 		//has not been added add to front of list.
