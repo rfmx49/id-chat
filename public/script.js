@@ -296,17 +296,22 @@ function sentMessage() {
 }
 
 function addMessage(messageData) {
-	if	(messageData.self) {
-		var classDiv = "row message self";
-	}
-	else {
-		var classDiv = "row message";
-	}
 	if (messageData.read) {
-		$("#chatEntries").append('<div class="' + classDiv + '"><p class="infos"><span class="pseudo">' + messageData.pseudo + '</span>, <time class="date" title="' + messageData.date + '">' + messageData.date + '</time>  <span id="' + messageData.muid + '-status" class="glyphicon ' + getMessageStatus(messageData.muid) + '"></span></p><p>' + messageData.msg + '</p></div>');
-		time();		
-		$("#chatEntries").slimScroll({ scrollTo: $("#chatEntries")[0].scrollHeight +'px'})
-		if (messageData.save) { msgStoreSave(messageData, $('#chatTitle').text()); }
+		if	(messageData.self) {
+			var classDiv = "row message self";
+			$("#chatEntries").append('<div class="' + classDiv + '"><p class="infos"><span class="pseudo">' + messageData.pseudo + '</span>, <time class="date" title="' + messageData.date + '">' + messageData.date + '</time>  <span id="' + messageData.muid + '-status" class="glyphicon ' + getMessageStatus(messageData.muid) + '"></span></p><p>' + messageData.msg + '</p></div>');
+			time();		
+			$("#chatEntries").slimScroll({ scrollTo: $("#chatEntries")[0].scrollHeight +'px'})
+			if (messageData.save) { msgStoreSave(messageData, $('#chatTitle').text()); }
+		}
+		else {
+			var classDiv = "row message";
+			$("#chatEntries").append('<div class="' + classDiv + '"><p class="infos"><span class="pseudo">' + messageData.pseudo + '</span>, <time class="date" title="' + messageData.date + '">' + messageData.date + '</time></p><p>' + messageData.msg + '</p></div>');
+			time();		
+			$("#chatEntries").slimScroll({ scrollTo: $("#chatEntries")[0].scrollHeight +'px'})
+			if (messageData.save) { msgStoreSave(messageData, $('#chatTitle').text()); }
+		}
+		
 	}
 	else {
 		//check if sender is an activechat if not add to list and save message store
@@ -406,7 +411,7 @@ function getMessageStatus(muid) {
 				return glyph;
 			case 4:
 				//message received by user
-				glyph = "glyphicon-ok-sign";
+				glyph = "glyphicon-ok";
 				return glyph;
 			case 5:
 				//message received on server
